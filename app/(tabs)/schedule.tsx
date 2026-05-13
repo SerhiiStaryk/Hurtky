@@ -1,9 +1,9 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { startOfWeek, endOfWeek, addWeeks, addDays, format, getISODay } from 'date-fns';
+import { startOfWeek, endOfWeek, addWeeks, addDays, format, isSameDay, getISODay } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -12,7 +12,12 @@ import { useAllClubs } from '@/hooks/useClubs';
 import { useChildren } from '@/hooks/useChildren';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const TIME_LABELS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00'];
+const TIME_LABELS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+
+const HOUR_HEIGHT = 60;
+const HEADER_HEIGHT = 60;
+const START_HOUR = 8;
+const GRID_HEIGHT = (21 - START_HOUR) * HOUR_HEIGHT;
 
 function hexToRgba(hex: string, alpha = 0.9) {
   const normalized = hex.replace('#', '');
@@ -37,12 +42,14 @@ function capitalize(value: string) {
 
 export default function ScheduleScreen() {
   const router = useRouter();
+  const horizontalScrollRef = useRef<ScrollView>(null);
+  const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const { data: allClubs = [], isLoading: isClubsLoading } = useAllClubs();
   const { data: children = [], isLoading: isChildrenLoading } = useChildren();
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-  const todayIsoDay = getISODay(new Date());
+
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
@@ -120,86 +127,68 @@ export default function ScheduleScreen() {
     return Array.from(entries.values());
   }, [allClubs, childMap]);
 
-  const isLoading = isClubsLoading || isChildrenLoading;
+  const getTimeMinutes = (timeStr: string) => {
+    const [h, m] = timeStr.split(':').map(Number);
+    return h * 60 + m;
+  };
 
-  if (isLoading) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' />
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const getBlockStyle = (startTime: string, endTime: string) => {
+    const startMins = getTimeMinutes(startTime);
+    const endMins = getTimeMinutes(endTime);
+    const startOffset = startMins - (START_HOUR * 60);
+    
+    const top = (startOffset / 60) * HOUR_HEIGHT;
+    const duration = (endMins - startMins) / 60;
+    const height = Math.max(duration * HOUR_HEIGHT, 40); // min height for readability
 
-  return (
-    <SafeAreaView style={[styles.container, { backgroundColor }]}>
-      <View style={styles.headerRow}>
-        <Pressable
-          style={({ pressed }) => [
-            styles.weekButton,
-            { backgroundColor: weekButtonBg },
-            pressed && styles.weekButtonPressed
-          ]}
-          onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
-        >
-          <ThemedText style={styles.weekButtonText}>‹ Попередній</ThemedText>
-        </Pressable>
+    return {
+      top,
+      height: height - 4, // margin between blocks
+    };
+  };
 
-        <View style={styles.weekLabelContainer}>
-          <ThemedText style={styles.weekLabel}>{weekLabel}</ThemedText>
-        </View>
+  const goToToday = () => {
+    const now = new Date();
+    setWeekStart(startOfWeek(now, { weekStartsOn: 1 }));
+    
+    // Use a small timeout to ensure state update/render happens if week changed
+    setTimeout(() => {
+      const dayIndex = getISODay(now) - 1;
+      horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated: true });
+    }, 50);
+  };
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.weekButton,
-            { backgroundColor: weekButtonBg },
-            pressed && styles.weekButtonPressed
-          ]}
-          onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
-        >
-          <ThemedText style={styles.weekButtonText}>Наступний ›</ThemedText>
-        </Pressable>
+  // Initial scroll to today
+  useEffect(() => {
+    if (!isLoading) {
+      setTimeout(() => {
+        const dayIndex = getISODay(new Date()) - 1;
+        horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated: false });
+      }, 100);
+    }
+  }, [isLoading]);
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.addButton,
-            { opacity: pressed ? 0.7 : 1, marginLeft: 8 }
-          ]}
-          onPress={() => {
-            if (children.length === 1) {
-              router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
-            } else if (children.length > 1) {
-              router.push('/(tabs)');
-            } else {
-              router.push('/child/new');
-            }
-          }}
-        >
-          <Ionicons
-            name="add-circle"
-            size={28}
-            color={tintColor}
-          />
-        </Pressable>
-      </View>
-
+  const renderGridView = () => (
+    <ScrollView style={styles.verticalScroll} showsVerticalScrollIndicator={false}>
       <View style={styles.gridContainer}>
         <View style={styles.timeAxis}>
           <View style={styles.timeAxisHeader}>
             <ThemedText style={styles.axisHeaderText}>Час</ThemedText>
           </View>
-          {TIME_LABELS.map(label => (
-            <View
-              key={label}
-              style={styles.timeAxisRow}
-            >
-              <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>{label}</ThemedText>
-            </View>
-          ))}
+          <View style={styles.timeAxisContent}>
+            {TIME_LABELS.map(label => (
+              <View
+                key={label}
+                style={styles.timeAxisRow}
+              >
+                <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>{label}</ThemedText>
+              </View>
+            ))}
+          </View>
         </View>
 
         <ScrollView
+          ref={horizontalScrollRef}
           horizontal
           showsHorizontalScrollIndicator={false}
         >
@@ -208,7 +197,7 @@ export default function ScheduleScreen() {
               const isoDay = index + 1;
               const items = scheduleItemsByDay.get(isoDay) ?? [];
               const date = addDays(weekStart, index);
-              const isToday = isoDay === todayIsoDay;
+              const isToday = isSameDay(date, new Date());
 
               return (
                 <View
@@ -224,50 +213,228 @@ export default function ScheduleScreen() {
                     <ThemedText style={styles.dayDate}>{format(date, 'd', { locale: uk })}</ThemedText>
                   </View>
 
-                  {items.length === 0 ? (
-                    <View style={[styles.emptyDay, { backgroundColor: emptyDayBg }]}>
-                      <ThemedText style={[styles.emptyDayText, { color: mutedTextColor }]}>Немає занять</ThemedText>
-                    </View>
-                  ) : (
-                    items.map(item => (
-                      <Pressable
-                        key={`${item.clubId}-${item.startTime}-${item.endTime}`}
-                        style={({ pressed }) => [
-                          styles.scheduleBlock,
-                          {
-                            backgroundColor: hexToRgba(item.colorHex, 0.9),
-                            opacity: pressed ? 0.9 : 1,
-                          },
-                        ]}
-                        onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
-                      >
-                        <View style={styles.blockTitleRow}>
-                          <ThemedText style={styles.blockEmoji}>{item.clubEmoji}</ThemedText>
-                          <ThemedText
-                            style={styles.blockTitle}
-                            numberOfLines={1}
-                          >
-                            {item.clubName}
-                          </ThemedText>
-                        </View>
-                        <ThemedText style={[styles.blockTime, { color: blockTimeColor }]}>
-                          {item.startTime} - {item.endTime}
-                        </ThemedText>
-                        <ThemedText
-                          style={[styles.blockChild, { color: blockChildColor }]}
-                          numberOfLines={1}
+                  <View style={styles.columnContent}>
+                    {/* Grid Lines */}
+                    {TIME_LABELS.map(t => (
+                      <View 
+                        key={t} 
+                        style={[
+                          styles.gridLine, 
+                          { 
+                            top: ((getTimeMinutes(t) - START_HOUR * 60) / 60) * HOUR_HEIGHT,
+                            borderTopColor: dayHeaderBg 
+                          }
+                        ]} 
+                      />
+                    ))}
+
+                    {items.map(item => {
+                      const blockStyle = getBlockStyle(item.startTime, item.endTime);
+                      return (
+                        <Pressable
+                          key={`${item.clubId}-${item.startTime}-${item.endTime}`}
+                          style={({ pressed }) => [
+                            styles.scheduleBlock,
+                            {
+                              backgroundColor: hexToRgba(item.colorHex, 0.9),
+                              opacity: pressed ? 0.9 : 1,
+                              top: blockStyle.top,
+                              height: blockStyle.height,
+                            },
+                          ]}
+                          onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
                         >
-                          {childMap.get(item.childId) ?? 'Дитина'}
-                        </ThemedText>
-                      </Pressable>
-                    ))
-                  )}
+                          <View style={styles.blockTitleRow}>
+                            <ThemedText style={styles.blockEmoji}>{item.clubEmoji}</ThemedText>
+                            <ThemedText
+                              style={styles.blockTitle}
+                              numberOfLines={1}
+                            >
+                              {item.clubName}
+                            </ThemedText>
+                          </View>
+                          <View>
+                            <ThemedText style={[styles.blockTime, { color: blockTimeColor }]}>
+                              {item.startTime} - {item.endTime}
+                            </ThemedText>
+                            <ThemedText
+                              style={[styles.blockChild, { color: blockChildColor }]}
+                              numberOfLines={1}
+                            >
+                              {childMap.get(item.childId) ?? 'Дитина'}
+                            </ThemedText>
+                          </View>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
                 </View>
               );
             })}
           </View>
         </ScrollView>
       </View>
+    </ScrollView>
+  );
+
+  const renderListView = () => (
+    <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
+      {DAY_LABELS.map((label, index) => {
+        const isoDay = index + 1;
+        const items = scheduleItemsByDay.get(isoDay) ?? [];
+        const date = addDays(weekStart, index);
+        const isToday = isSameDay(date, new Date());
+
+        if (items.length === 0) return null;
+
+        return (
+          <View key={label} style={styles.listSection}>
+            <View style={styles.listDayHeaderRow}>
+              <ThemedText style={[styles.listDayName, isToday && { color: tintColor }]}>
+                {label}
+              </ThemedText>
+              <ThemedText style={styles.listDayDate}>
+                {format(date, 'd MMMM', { locale: uk })}
+              </ThemedText>
+            </View>
+            {items.map(item => (
+              <Pressable
+                key={`${item.clubId}-${item.startTime}-${item.endTime}`}
+                style={({ pressed }) => [
+                  styles.listItem,
+                  { 
+                    backgroundColor: hexToRgba(item.colorHex, 0.12),
+                    borderLeftColor: item.colorHex,
+                    opacity: pressed ? 0.7 : 1
+                  }
+                ]}
+                onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
+              >
+                <View style={styles.listItemTimeCol}>
+                  <ThemedText style={styles.listItemStartTime}>{item.startTime}</ThemedText>
+                  <ThemedText style={[styles.listItemEndTime, { color: mutedTextColor }]}>{item.endTime}</ThemedText>
+                </View>
+                <View style={styles.listItemContent}>
+                  <View style={styles.listItemTitleRow}>
+                    <ThemedText style={styles.listItemEmoji}>{item.clubEmoji}</ThemedText>
+                    <ThemedText style={styles.listItemTitle} numberOfLines={1}>{item.clubName}</ThemedText>
+                  </View>
+                  <ThemedText style={[styles.listItemChild, { color: blockChildColor }]} numberOfLines={1}>
+                    {childMap.get(item.childId) ?? 'Дитина'}
+                  </ThemedText>
+                </View>
+                <Ionicons name="chevron-forward" size={18} color={mutedTextColor} />
+              </Pressable>
+            ))}
+          </View>
+        );
+      })}
+      {Array.from(scheduleItemsByDay.values()).every(arr => arr.length === 0) && (
+        <View style={styles.emptyWeek}>
+          <Ionicons name="calendar-outline" size={48} color={mutedTextColor} />
+          <ThemedText style={{ color: mutedTextColor, marginTop: 12, textAlign: 'center' }}>
+            На цьому тижні немає занять
+          </ThemedText>
+        </View>
+      )}
+    </ScrollView>
+  );
+
+  const isLoading = isClubsLoading || isChildrenLoading;
+
+  if (isLoading) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size='large' />
+        </View>
+      </SafeAreaView>
+    );
+  }
+
+  return (
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
+      <View style={styles.headerRow}>
+        <View style={styles.navGroup}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.navButton,
+              { backgroundColor: weekButtonBg },
+              pressed && styles.weekButtonPressed
+            ]}
+            onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
+          >
+            <Ionicons name="chevron-back" size={20} color={blockTimeColor} />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.todayButton,
+              { backgroundColor: weekButtonBg },
+              pressed && styles.weekButtonPressed
+            ]}
+            onPress={goToToday}
+          >
+            <ThemedText style={styles.todayButtonText}>Сьогодні</ThemedText>
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.navButton,
+              { backgroundColor: weekButtonBg },
+              pressed && styles.weekButtonPressed
+            ]}
+            onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
+          >
+            <Ionicons name="chevron-forward" size={20} color={blockTimeColor} />
+          </Pressable>
+        </View>
+
+        <View style={styles.weekLabelContainer}>
+          <ThemedText style={styles.weekLabel}>{weekLabel}</ThemedText>
+        </View>
+
+        <View style={styles.headerRight}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.viewToggleButton,
+              { backgroundColor: weekButtonBg },
+              pressed && styles.weekButtonPressed
+            ]}
+            onPress={() => setViewType(prev => prev === 'grid' ? 'list' : 'grid')}
+          >
+            <Ionicons 
+              name={viewType === 'grid' ? 'list-outline' : 'grid-outline'} 
+              size={22} 
+              color={tintColor} 
+            />
+          </Pressable>
+
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButton,
+              { opacity: pressed ? 0.7 : 1 }
+            ]}
+            onPress={() => {
+              if (children.length === 1) {
+                router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
+              } else if (children.length > 1) {
+                router.push('/(tabs)');
+              } else {
+                router.push('/child/new');
+              }
+            }}
+          >
+            <Ionicons
+              name="add-circle"
+              size={32}
+              color={tintColor}
+            />
+          </Pressable>
+        </View>
+      </View>
+
+      {viewType === 'grid' ? renderGridView() : renderListView()}
 
       <View style={styles.legendContainer}>
         <ThemedText style={styles.legendTitle}>Діти в розкладі</ThemedText>
@@ -300,16 +467,28 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
     marginBottom: 16,
   },
-  weekButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 10,
+  navGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'transparent',
   },
-  weekButtonPressed: {
-    opacity: 0.8,
+  navButton: {
+    padding: 8,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  todayButton: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    marginHorizontal: 4,
+  },
+  todayButtonText: {
+    fontSize: 13,
+    fontWeight: '600',
   },
   weekButtonText: {
     fontSize: 14,
@@ -317,65 +496,160 @@ const styles = StyleSheet.create({
   },
   weekLabelContainer: {
     flex: 1,
-    marginHorizontal: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   weekLabel: {
-    fontSize: 16,
+    fontSize: 14,
     fontWeight: '700',
+    textAlign: 'center',
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  viewToggleButton: {
+    padding: 8,
+    borderRadius: 8,
+    marginRight: 4,
   },
   addButton: {
     padding: 4,
   },
-  gridContainer: {
+  listContainer: {
     flex: 1,
+  },
+  listSection: {
+    marginBottom: 24,
+  },
+  listDayHeaderRow: {
     flexDirection: 'row',
+    alignItems: 'baseline',
+    marginBottom: 12,
+    paddingHorizontal: 4,
+  },
+  listDayName: {
+    fontSize: 20,
+    fontWeight: '800',
+    marginRight: 10,
+  },
+  listDayDate: {
+    fontSize: 14,
+    fontWeight: '600',
+    opacity: 0.6,
+  },
+  listItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    borderLeftWidth: 4,
+    marginBottom: 10,
+  },
+  listItemTimeCol: {
+    width: 60,
+    marginRight: 12,
+  },
+  listItemStartTime: {
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  listItemEndTime: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+  listItemContent: {
+    flex: 1,
+  },
+  listItemTitleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 2,
+  },
+  listItemEmoji: {
+    fontSize: 18,
+    marginRight: 6,
+  },
+  listItemTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+  },
+  listItemChild: {
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  emptyWeek: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: 60,
+  },
+  gridContainer: {
+    flexDirection: 'row',
+  },
+  verticalScroll: {
+    flex: 1,
   },
   timeAxis: {
     width: 64,
-    marginRight: 8,
   },
   timeAxisHeader: {
-    height: 36,
+    height: HEADER_HEIGHT,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  timeAxisContent: {
+    height: GRID_HEIGHT,
   },
   axisHeaderText: {
     fontSize: 12,
     fontWeight: '700',
   },
   timeAxisRow: {
-    height: 70,
-    justifyContent: 'center',
+    height: HOUR_HEIGHT * 2,
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingRight: 8,
   },
   timeLabel: {
     fontSize: 12,
-    textAlign: 'right',
-    paddingRight: 6,
+    marginTop: -8, // Center text on the grid line
   },
   columnsRow: {
     flexDirection: 'row',
   },
   column: {
-    minWidth: 128,
+    width: 140,
     paddingRight: 8,
+  },
+  columnContent: {
+    height: GRID_HEIGHT,
+    position: 'relative',
+  },
+  gridLine: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    borderTopWidth: 1,
+    height: 1,
   },
   todayColumn: {
     borderRadius: 12,
   },
   dayHeader: {
+    height: HEADER_HEIGHT,
     paddingVertical: 10,
     paddingHorizontal: 10,
     borderRadius: 10,
-    marginBottom: 8,
+    marginBottom: 0,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   todayHeader: {
   },
   dayName: {
     fontSize: 12,
     fontWeight: '700',
-    marginBottom: 4,
   },
   dayDate: {
     fontSize: 14,
@@ -391,32 +665,34 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scheduleBlock: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
     borderRadius: 8,
-    padding: 10,
-    marginBottom: 10,
-    minHeight: 72,
+    padding: 8,
     justifyContent: 'space-between',
+    zIndex: 1,
   },
   blockTitleRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 4,
+    marginBottom: 2,
   },
   blockEmoji: {
-    marginRight: 6,
-    fontSize: 16,
+    marginRight: 4,
+    fontSize: 14,
   },
   blockTitle: {
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: '700',
     flex: 1,
   },
   blockTime: {
-    fontSize: 12,
-    marginBottom: 4,
+    fontSize: 11,
+    fontWeight: '600',
   },
   blockChild: {
-    fontSize: 11,
+    fontSize: 10,
   },
   legendContainer: {
     marginTop: 16,
