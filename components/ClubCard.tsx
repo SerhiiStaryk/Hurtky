@@ -38,8 +38,8 @@ export function ClubCard({ club }: ClubCardProps) {
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: colors.background,
-          opacity: pressed ? 0.7 : 1,
+          backgroundColor: colors.surface,
+          opacity: pressed ? 0.8 : 1,
         },
       ]}
       onPress={handlePress}
@@ -47,7 +47,9 @@ export function ClubCard({ club }: ClubCardProps) {
       <View style={[styles.colorBar, { backgroundColor: club.color_hex }]} />
       <View style={styles.content}>
         <View style={styles.leftContent}>
-          <ThemedText style={styles.emoji}>{club.emoji}</ThemedText>
+          <View style={[styles.emojiContainer, { backgroundColor: club.color_hex + '10' }]}>
+            <ThemedText style={styles.emoji}>{club.emoji}</ThemedText>
+          </View>
           <View style={styles.textContent}>
             <ThemedText style={styles.name} numberOfLines={1}>
               {club.name}
@@ -57,7 +59,9 @@ export function ClubCard({ club }: ClubCardProps) {
             </ThemedText>
           </View>
         </View>
-        <ThemedText style={styles.chevron}>›</ThemedText>
+        <View style={styles.chevronContainer}>
+          <Ionicons name="chevron-forward" size={16} color={colors.icon + '80'} />
+        </View>
       </View>
     </Pressable>
   );
@@ -66,17 +70,21 @@ export function ClubCard({ club }: ClubCardProps) {
 const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
-    borderRadius: 12,
-    marginHorizontal: 16,
-    marginVertical: 4,
-    padding: 12,
+    borderRadius: 16,
+    marginVertical: 5,
+    padding: 10,
     alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.04,
+    shadowRadius: 4,
+    elevation: 1,
   },
   colorBar: {
     width: 4,
-    height: '100%',
+    height: 36,
     borderRadius: 2,
-    marginRight: 12,
+    marginRight: 10,
   },
   content: {
     flex: 1,
@@ -89,24 +97,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     flex: 1,
   },
+  emojiContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 10,
+  },
   emoji: {
-    fontSize: 24,
-    marginRight: 12,
+    fontSize: 20,
   },
   textContent: {
     flex: 1,
   },
   name: {
-    fontSize: 16,
-    fontWeight: '600',
+    fontSize: 14,
+    fontWeight: '800',
   },
   schedule: {
-    fontSize: 14,
-    opacity: 0.7,
-    marginTop: 2,
+    fontSize: 11,
+    opacity: 0.6,
+    marginTop: 1,
+    fontWeight: '500',
   },
-  chevron: {
-    fontSize: 20,
-    opacity: 0.5,
+  chevronContainer: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: 'rgba(0,0,0,0.03)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

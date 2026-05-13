@@ -57,14 +57,14 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ThemedView style={[styles.container, { backgroundColor: colors.background }]}> 
+    <ThemedView style={styles.container}> 
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
-          <ThemedText style={[styles.sectionTitle, { color: colors.text }]}>Резервна копія</ThemedText>
+          <ThemedText style={styles.sectionTitle}>Резервна копія</ThemedText>
 
-          <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.tint }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
             <View style={styles.cardHeader}>
-              <ThemedText style={[styles.cardTitle, { color: colors.text }]}>Експорт даних</ThemedText>
+              <ThemedText style={styles.cardTitle}>Експорт даних</ThemedText>
               <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>Зберегти всіх дітей та гуртки у файл</ThemedText>
             </View>
 
@@ -90,9 +90,9 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.tint }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
             <View style={styles.cardHeader}>
-              <ThemedText style={[styles.cardTitle, { color: colors.text }]}>Імпорт даних</ThemedText>
+              <ThemedText style={styles.cardTitle}>Імпорт даних</ThemedText>
               <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>Відновити з резервної копії .json</ThemedText>
             </View>
 
@@ -118,11 +118,11 @@ export default function SettingsScreen() {
             </Pressable>
           </View>
 
-          <ThemedText style={[styles.sectionTitle, { color: colors.text, marginTop: 32 }]}>Про додаток</ThemedText>
-          <View style={[styles.card, { backgroundColor: colors.background, borderColor: colors.tint }]}> 
+          <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Про додаток</ThemedText>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
             <View style={styles.rowItem}>
               <ThemedText style={[styles.rowLabel, { color: colors.icon }]}>Версія</ThemedText>
-              <ThemedText style={[styles.rowValue, { color: colors.text }]}>{appVersion}</ThemedText>
+              <ThemedText style={styles.rowValue}>{appVersion}</ThemedText>
             </View>
           </View>
         </ScrollView>
@@ -140,54 +140,68 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
+    paddingTop: 24,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '700',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    opacity: 0.5,
     marginBottom: 12,
   },
   card: {
-    borderWidth: 1,
-    borderRadius: 16,
+    borderRadius: 20,
     padding: 16,
     marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
   },
   cardHeader: {
     marginBottom: 16,
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: '800',
     marginBottom: 4,
   },
   cardSubtitle: {
-    fontSize: 14,
-    lineHeight: 20,
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
   },
   button: {
     marginTop: 8,
-    borderRadius: 12,
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
   },
   buttonText: {
     color: '#fff',
-    fontWeight: '700',
-    fontSize: 16,
+    fontWeight: '800',
+    fontSize: 15,
   },
   warningBox: {
-    backgroundColor: '#fef3c7',
+    backgroundColor: '#FEF3C7',
     borderRadius: 12,
     padding: 12,
     marginBottom: 12,
   },
   warningText: {
-    color: '#92400e',
-    fontSize: 14,
-    lineHeight: 20,
+    color: '#92400E',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '600',
   },
   successBanner: {
-    backgroundColor: '#dcfce7',
+    backgroundColor: '#DCFCE7',
     borderRadius: 12,
     paddingVertical: 10,
     paddingHorizontal: 12,
@@ -195,8 +209,8 @@ const styles = StyleSheet.create({
   },
   successText: {
     color: '#166534',
-    fontWeight: '700',
-    fontSize: 14,
+    fontWeight: '800',
+    fontSize: 13,
   },
   rowItem: {
     flexDirection: 'row',

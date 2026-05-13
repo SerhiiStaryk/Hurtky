@@ -8,6 +8,8 @@ import { uk } from 'date-fns/locale';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { useThemeColor } from '@/hooks/use-theme-color';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { Colors } from '@/constants/theme';
 import { useAllClubs } from '@/hooks/useClubs';
 import { useChildren } from '@/hooks/useChildren';
 
@@ -43,6 +45,8 @@ function capitalize(value: string) {
 export default function ScheduleScreen() {
   const router = useRouter();
   const horizontalScrollRef = useRef<ScrollView>(null);
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const { data: allClubs = [], isLoading: isClubsLoading } = useAllClubs();
   const { data: children = [], isLoading: isChildrenLoading } = useChildren();
@@ -346,7 +350,7 @@ export default function ScheduleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' />
+          <ActivityIndicator size='large' color={tintColor} />
         </View>
       </SafeAreaView>
     );
@@ -359,18 +363,18 @@ export default function ScheduleScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.navButton,
-              { backgroundColor: weekButtonBg },
+              { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed
             ]}
             onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
           >
-            <Ionicons name="chevron-back" size={20} color={blockTimeColor} />
+            <Ionicons name="chevron-back" size={20} color={colors.tint} />
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
               styles.todayButton,
-              { backgroundColor: weekButtonBg },
+              { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed
             ]}
             onPress={goToToday}
@@ -381,55 +385,35 @@ export default function ScheduleScreen() {
           <Pressable
             style={({ pressed }) => [
               styles.navButton,
-              { backgroundColor: weekButtonBg },
+              { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed
             ]}
             onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
           >
-            <Ionicons name="chevron-forward" size={20} color={blockTimeColor} />
+            <Ionicons name="chevron-forward" size={20} color={colors.tint} />
           </Pressable>
-        </View>
-
-        <View style={styles.weekLabelContainer}>
-          <ThemedText style={styles.weekLabel}>{weekLabel}</ThemedText>
         </View>
 
         <View style={styles.headerRight}>
           <Pressable
             style={({ pressed }) => [
               styles.viewToggleButton,
-              { backgroundColor: weekButtonBg },
+              { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed
             ]}
             onPress={() => setViewType(prev => prev === 'grid' ? 'list' : 'grid')}
           >
             <Ionicons 
               name={viewType === 'grid' ? 'list-outline' : 'grid-outline'} 
-              size={22} 
-              color={tintColor} 
-            />
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.addButton,
-              { opacity: pressed ? 0.7 : 1 }
-            ]}
-            onPress={() => {
-              if (children.length >= 1) {
-                router.push('/club/new');
-              } else {
-                router.push('/child/new');
-              }
-            }}
-          >
-            <Ionicons
-              name="add-circle"
-              size={32}
-              color={tintColor}
+              size={20} 
+              color={colors.tint} 
             />
           </Pressable>
         </View>
+      </View>
+
+      <View style={styles.weekLabelContainer}>
+        <ThemedText style={styles.weekLabel}>{weekLabel}</ThemedText>
       </View>
 
       {viewType === 'grid' ? renderGridView() : renderListView()}
@@ -455,7 +439,8 @@ export default function ScheduleScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
+    paddingTop: 16,
+    paddingHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -465,41 +450,37 @@ const styles = StyleSheet.create({
   headerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    justifyContent: 'space-between',
+    marginBottom: 12,
   },
   navGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'transparent',
   },
   navButton: {
-    padding: 8,
-    borderRadius: 8,
+    width: 36,
+    height: 36,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
   },
   todayButton: {
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 12,
     marginHorizontal: 4,
   },
   todayButtonText: {
     fontSize: 13,
-    fontWeight: '600',
-  },
-  weekButtonText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontWeight: '800',
   },
   weekLabelContainer: {
-    flex: 1,
+    marginBottom: 16,
     alignItems: 'center',
-    justifyContent: 'center',
   },
   weekLabel: {
-    fontSize: 14,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '900',
     textAlign: 'center',
   },
   headerRight: {

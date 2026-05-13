@@ -113,57 +113,64 @@ export default function ChildProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={['#0a7ea4', '#0a7ea4']}
+        colors={['#4F46E5', '#7C3AED']}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
         style={styles.header}
       >
-        <View style={styles.headerContent}>
+        <View style={styles.headerTop}>
           <Pressable
             onPress={() => router.back()}
             style={styles.backButton}
           >
-            <Ionicons name="chevron-back" size={24} color="white" />
+            <View style={styles.backButtonContent}>
+              <Ionicons name="chevron-back" size={16} color="white" />
+              <ThemedText style={styles.backButtonText}>Назад</ThemedText>
+            </View>
           </Pressable>
 
-          <View style={styles.centerHeader}>
-            <View style={styles.avatarContainer}>
-              {child.photo_uri ? (
-                <Image
-                  source={{ uri: child.photo_uri }}
-                  style={styles.avatar}
-                />
-              ) : (
-                <View
-                  style={[
-                    styles.avatar,
-                    styles.avatarPlaceholder,
-                    { backgroundColor: '#ffffff' },
-                  ]}
-                >
-                  <ThemedText style={styles.initials}>
-                    {initials}
-                  </ThemedText>
-                </View>
-              )}
-            </View>
-            <ThemedText style={styles.childName}>{child.name}</ThemedText>
-            <ThemedText style={styles.childAge}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
-          </View>
-
-          <View style={styles.headerRight}>
+          <View style={styles.headerActions}>
             <Pressable
               onPress={() => router.push({ pathname: '/child/[id]/edit', params: { id } })}
               style={styles.headerIcon}
             >
-              <Ionicons name="pencil" size={24} color="white" />
+              <Ionicons name="pencil" size={20} color="white" />
             </Pressable>
             <Pressable
               onPress={handleDelete}
               style={styles.headerIcon}
             >
-              <Ionicons name="trash" size={24} color="white" />
+              <Ionicons name="trash" size={20} color="white" />
             </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.profileInfo}>
+          <View style={styles.avatarContainer}>
+            {child.photo_uri ? (
+              <Image
+                source={{ uri: child.photo_uri }}
+                style={styles.avatar}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.avatar,
+                  styles.avatarPlaceholder,
+                  { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
+                ]}
+              >
+                <ThemedText style={styles.initials}>
+                  {initials}
+                </ThemedText>
+              </View>
+            )}
+          </View>
+          <View style={styles.nameContainer}>
+            <ThemedText style={styles.childName}>{child.name}</ThemedText>
+            <ThemedText style={styles.childAge}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
           </View>
         </View>
 
@@ -181,16 +188,18 @@ export default function ChildProfileScreen() {
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.scrollView}>
+      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
         {warningClubs.map((club) => (
           <View key={club.id} style={styles.warningBanner}>
-            <Ionicons name="warning" size={20} color="#ff9500" />
+            <View style={[styles.warningIconContainer, { backgroundColor: '#FEF3C7' }]}>
+              <Ionicons name="warning" size={18} color="#D97706" />
+            </View>
             <View style={styles.warningText}>
               <ThemedText style={styles.warningTitle}>
                 Оплата за {club.name}
               </ThemedText>
               <ThemedText style={styles.warningDetails}>
-                {new Date(club.next_payment_date!).toLocaleDateString('uk-UA')} - {club.price} ₴
+                До {new Date(club.next_payment_date!).toLocaleDateString('uk-UA')} · {club.price} ₴
               </ThemedText>
             </View>
           </View>
@@ -201,6 +210,11 @@ export default function ChildProfileScreen() {
           {clubs?.map((club) => (
             <ClubCard key={club.id} club={club} />
           ))}
+          {clubs?.length === 0 && (
+            <View style={styles.emptyClubs}>
+              <ThemedText style={styles.emptyClubsText}>Ще немає гуртків</ThemedText>
+            </View>
+          )}
         </View>
       </ScrollView>
 
@@ -208,7 +222,7 @@ export default function ChildProfileScreen() {
         style={[styles.fab, { backgroundColor: colors.tint }]}
         onPress={() => router.push(`/club/new?childId=${id}`)}
       >
-        <Ionicons name="add" size={24} color="white" />
+        <Ionicons name="add" size={28} color="white" />
       </Pressable>
     </View>
   );
@@ -217,115 +231,166 @@ export default function ChildProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
   },
   header: {
     paddingTop: 50,
-    paddingBottom: 20,
+    paddingBottom: 24,
     paddingHorizontal: 16,
+    borderBottomLeftRadius: 32,
+    borderBottomRightRadius: 32,
   },
-  headerContent: {
+  headerTop: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    marginBottom: 20,
   },
   backButton: {
-    padding: 8,
+    paddingVertical: 6,
   },
-  centerHeader: {
+  backButtonContent: {
+    flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
+    gap: 4,
+  },
+  backButtonText: {
+    color: 'white',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  headerActions: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  headerIcon: {
+    padding: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+  },
+  profileInfo: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 16,
   },
   avatarContainer: {
-    marginBottom: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
   },
   avatar: {
-    width: 80,
-    height: 80,
-    borderRadius: 12,
+    width: 72,
+    height: 72,
+    borderRadius: 22,
+    borderWidth: 2,
+    borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   avatarPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   initials: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#0a7ea4',
+    fontSize: 28,
+    fontWeight: '900',
+    color: 'white',
+  },
+  nameContainer: {
+    flex: 1,
   },
   childName: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 22,
+    fontWeight: '900',
     color: 'white',
-    textAlign: 'center',
   },
   childAge: {
     fontSize: 14,
-    color: 'white',
-    opacity: 0.9,
-    textAlign: 'center',
-  },
-  headerRight: {
-    flexDirection: 'row',
-  },
-  headerIcon: {
-    padding: 8,
-    marginLeft: 8,
+    color: 'rgba(255, 255, 255, 0.7)',
+    fontWeight: '700',
+    marginTop: 2,
   },
   statsChips: {
     flexDirection: 'row',
-    justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 20,
+    gap: 8,
   },
   chip: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    marginHorizontal: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 10,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
   },
   chipText: {
     color: 'white',
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '800',
   },
   scrollView: {
     flex: 1,
   },
+  scrollContent: {
+    paddingBottom: 100,
+  },
   warningBanner: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#fff3cd',
-    borderColor: '#ffeaa7',
-    borderWidth: 1,
-    borderRadius: 8,
+    backgroundColor: 'white',
+    borderRadius: 16,
     marginHorizontal: 16,
     marginTop: 16,
     padding: 12,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 10,
+    elevation: 2,
+  },
+  warningIconContainer: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
   },
   warningText: {
-    marginLeft: 12,
     flex: 1,
   },
   warningTitle: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#856404',
+    fontWeight: '800',
+    color: '#1A1A2E',
   },
   warningDetails: {
     fontSize: 12,
-    color: '#856404',
-    opacity: 0.8,
-    marginTop: 2,
+    color: '#6B7280',
+    fontWeight: '600',
+    marginTop: 1,
   },
   section: {
-    marginTop: 16,
+    marginTop: 20,
     paddingHorizontal: 16,
   },
   sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    opacity: 0.5,
     marginBottom: 12,
+  },
+  emptyClubs: {
+    padding: 20,
+    alignItems: 'center',
+    backgroundColor: 'white',
+    borderRadius: 16,
+    borderStyle: 'dashed',
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  emptyClubsText: {
+    fontSize: 14,
+    opacity: 0.5,
+    fontWeight: '600',
   },
   fab: {
     position: 'absolute',
@@ -333,18 +398,18 @@ const styles = StyleSheet.create({
     right: 24,
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
-    elevation: 4,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 4,
+    elevation: 5,
+    shadowColor: '#4F46E5',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
   },
   error: {
     fontSize: 18,
-    color: '#b00',
+    color: '#EF4444',
     textAlign: 'center',
     marginTop: 50,
   },

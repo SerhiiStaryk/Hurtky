@@ -53,8 +53,8 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
       style={({ pressed }) => [
         styles.card,
         {
-          backgroundColor: colors.background,
-          opacity: pressed ? 0.7 : 1,
+          backgroundColor: colors.surface,
+          opacity: pressed ? 0.8 : 1,
         },
         Platform.OS === 'ios' && styles.shadowIOS,
         Platform.OS === 'android' && styles.shadowAndroid,
@@ -70,8 +70,8 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
               style={styles.avatar}
             />
           ) : (
-            <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: primaryColor }]}>
-              <ThemedText style={[styles.initials, { color: '#fff' }]}>{initials}</ThemedText>
+            <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: colors.tint + '15' }]}>
+              <ThemedText style={[styles.initials, { color: colors.tint }]}>{initials}</ThemedText>
             </View>
           )}
         </View>
@@ -86,17 +86,17 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
           </ThemedText>
           <View style={styles.metaContainer}>
             <ThemedText style={styles.meta}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
-            <ThemedText style={[styles.meta, styles.metaDot]}>•</ThemedText>
+            <ThemedText style={[styles.meta, styles.metaDot]}>·</ThemedText>
             <ThemedText style={styles.meta}>
               {clubCount} {getPlural(clubCount, 'гурток', 'гуртки', 'гуртків')}
             </ThemedText>
           </View>
         </View>
 
-        {/* Right: Club Count Badge & Add Club Button */}
+        {/* Right: Club Count Badge */}
         <View style={styles.rightContent}>
-          <View style={[styles.badge, { backgroundColor: primaryColor }]}>
-            <ThemedText style={[styles.badgeText, { color: '#fff' }]}>{clubCount}</ThemedText>
+          <View style={[styles.badge, { backgroundColor: colors.tint + '15' }]}>
+            <ThemedText style={[styles.badgeText, { color: colors.tint }]}>{clubCount} {clubCount === 0 ? '⭕' : '⭐'}</ThemedText>
           </View>
 
           <Pressable
@@ -109,7 +109,7 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
               router.push({ pathname: '/club/new', params: { childId: child.id.toString() } });
             }}
           >
-            <Ionicons name="add-circle" size={32} color={primaryColor} />
+            <Ionicons name="add-circle" size={28} color={colors.tint} />
           </Pressable>
         </View>
       </View>
@@ -121,17 +121,17 @@ const styles = StyleSheet.create({
   card: {
     borderRadius: 18,
     marginHorizontal: 16,
-    marginVertical: 8,
+    marginVertical: 6,
     padding: 12,
   },
   shadowIOS: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
   },
   shadowAndroid: {
-    elevation: 3,
+    elevation: 2,
   },
   content: {
     flexDirection: 'row',
@@ -143,52 +143,53 @@ const styles = StyleSheet.create({
   avatar: {
     width: 52,
     height: 52,
-    borderRadius: 26,
+    borderRadius: 16,
   },
   avatarPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
   },
   initials: {
-    fontSize: 18,
-    fontWeight: 'bold',
+    fontSize: 20,
+    fontWeight: '800',
   },
   centerContent: {
     flex: 1,
   },
   name: {
     fontSize: 16,
-    fontWeight: '600',
-    marginBottom: 4,
+    fontWeight: '800',
+    marginBottom: 2,
   },
   metaContainer: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   meta: {
-    fontSize: 13,
-    opacity: 0.7,
+    fontSize: 12,
+    opacity: 0.6,
+    fontWeight: '500',
   },
   metaDot: {
     marginHorizontal: 6,
     opacity: 0.5,
   },
   badge: {
-    minWidth: 40,
-    height: 40,
-    borderRadius: 20,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 12,
+    marginLeft: 8,
   },
   badgeText: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 11,
+    fontWeight: '800',
   },
   rightContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginLeft: 8,
+    marginLeft: 4,
   },
   addClubButton: {
     marginLeft: 8,

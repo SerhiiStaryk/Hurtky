@@ -130,13 +130,13 @@ export default function HomeScreen() {
   };
 
   const renderHeader = () => (
-    <View style={[styles.header, { backgroundColor: colors.background }]}>
+    <View style={[styles.header]}>
       <View style={styles.headerTop}>
-        <ThemedText style={styles.title}>Мої діти</ThemedText>
+        <ThemedText style={styles.title}>Мої <ThemedText style={[styles.title, { color: colors.tint }]}>діти</ThemedText></ThemedText>
         <View style={{ flexDirection: 'row' }}>
           <Pressable
             style={({ pressed }) => [
-              styles.addButton,
+              styles.iconBtn,
               { opacity: pressed ? 0.7 : 1, marginRight: 8 },
             ]}
             onPress={() => {
@@ -149,20 +149,20 @@ export default function HomeScreen() {
           >
             <Ionicons
               name="school-outline"
-              size={28}
+              size={20}
               color={colors.tint}
             />
           </Pressable>
           <Pressable
             style={({ pressed }) => [
-              styles.addButton,
+              styles.iconBtn,
               { opacity: pressed ? 0.7 : 1 },
             ]}
             onPress={handleAddChild}
           >
             <Ionicons
               name="person-add-outline"
-              size={28}
+              size={20}
               color={colors.tint}
             />
           </Pressable>
@@ -170,7 +170,7 @@ export default function HomeScreen() {
       </View>
       {children.length > 0 && (
         <ThemedText style={styles.childCount}>
-          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}
+          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')} · {upcomingLessons.length} {getPlural(upcomingLessons.length, 'заняття', 'заняття', 'занять')}
         </ThemedText>
       )}
     </View>
@@ -205,35 +205,33 @@ export default function HomeScreen() {
   );
 
   const renderUpcomingLesson = (lesson: UpcomingLesson) => (
-    <View
+    <Pressable
       key={lesson.id}
-      style={[
+      style={({ pressed }) => [
         styles.lessonCard,
         {
-          backgroundColor: colors.background,
+          backgroundColor: colors.surface,
           borderLeftColor: lesson.colorHex,
+          opacity: pressed ? 0.9 : 1,
         },
       ]}
     >
       <View style={styles.lessonContent}>
-        <View style={styles.lessonEmoji}>
-          <ThemedText style={styles.lessonEmojiText}>
-            {lesson.clubEmoji}
-          </ThemedText>
-        </View>
         <View style={styles.lessonInfo}>
           <ThemedText style={styles.lessonClub}>
-            {lesson.clubName}
-          </ThemedText>
-          <ThemedText style={styles.lessonChild}>
-            {lesson.childName}
+            {lesson.clubEmoji} {lesson.clubName}
           </ThemedText>
           <ThemedText style={styles.lessonTime}>
-            {lesson.startTime} - {lesson.endTime}
+            {lesson.dayLabel} · {lesson.startTime}–{lesson.endTime}
+          </ThemedText>
+        </View>
+        <View style={[styles.dayBadge, { backgroundColor: lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50' }]}>
+          <ThemedText style={[styles.dayBadgeText, { color: lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80' }]}>
+            {lesson.dayLabel}
           </ThemedText>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 
   const renderUpcomingSection = () => {
@@ -327,25 +325,31 @@ const styles = StyleSheet.create({
   },
   header: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    paddingTop: 12,
+    paddingVertical: 20,
   },
   headerTop: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 8,
+    marginBottom: 4,
   },
   title: {
-    fontSize: 28,
-    fontWeight: '700',
+    fontSize: 32,
+    fontWeight: '900',
+    letterSpacing: -0.5,
   },
-  addButton: {
-    padding: 8,
+  iconBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   childCount: {
     fontSize: 14,
-    opacity: 0.6,
+    opacity: 0.5,
+    fontWeight: '600',
   },
   emptyState: {
     flex: 1,
@@ -363,77 +367,71 @@ const styles = StyleSheet.create({
   emptyStateButton: {
     paddingHorizontal: 32,
     paddingVertical: 12,
-    borderRadius: 8,
+    borderRadius: 14,
     marginTop: 16,
   },
   sectionContainer: {
     paddingHorizontal: 16,
-    paddingVertical: 16,
-    marginTop: 8,
+    paddingVertical: 12,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: 12,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    opacity: 0.5,
     marginBottom: 12,
   },
   lessonsContainer: {
-    gap: 12,
+    gap: 10,
   },
   lessonCard: {
     borderLeftWidth: 4,
-    borderRadius: 12,
+    borderRadius: 16,
     padding: 12,
     ...Platform.select({
       ios: {
         shadowColor: '#000',
-        shadowOffset: { width: 0, height: 1 },
-        shadowOpacity: 0.08,
-        shadowRadius: 2,
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.05,
+        shadowRadius: 6,
       },
       android: {
-        elevation: 2,
+        elevation: 1,
       },
     }),
   },
   lessonContent: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  lessonEmoji: {
-    fontSize: 24,
-    marginRight: 12,
-    width: 40,
-    height: 40,
-    borderRadius: 8,
-    backgroundColor: 'rgba(0,0,0,0.05)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  lessonEmojiText: {
-    fontSize: 20,
+    justifyContent: 'space-between',
   },
   lessonInfo: {
     flex: 1,
   },
   lessonClub: {
-    fontSize: 14,
-    fontWeight: '600',
+    fontSize: 15,
+    fontWeight: '800',
     marginBottom: 2,
-  },
-  lessonChild: {
-    fontSize: 12,
-    opacity: 0.7,
-    marginBottom: 4,
   },
   lessonTime: {
     fontSize: 12,
     opacity: 0.6,
-    fontWeight: '500',
+    fontWeight: '600',
+  },
+  dayBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  dayBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
   },
   footerContainer: {
     paddingTop: 8,
   },
   bottomPadding: {
-    height: 20,
+    height: 30,
   },
 });

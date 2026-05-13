@@ -197,7 +197,7 @@ export default function ClubDetailScreen() {
         <View style={styles.topRow}>
           <Pressable
             onPress={() => router.back()}
-            style={styles.backIcon}
+            style={[styles.backIcon, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#eef2ff' }]}
           >
             <Ionicons
               name='chevron-back'
@@ -213,7 +213,7 @@ export default function ClubDetailScreen() {
           </View>
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
           <ThemedText
             type='subtitle'
             style={styles.cardTitle}
@@ -226,8 +226,8 @@ export default function ClubDetailScreen() {
                 key={slot.id}
                 style={styles.scheduleRow}
               >
-                <View style={styles.dayChip}>
-                  <ThemedText style={styles.dayChipText}>{dayNames[slot.day_of_week - 1]}</ThemedText>
+                <View style={[styles.dayChip, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#e0f2fe' }]}>
+                  <ThemedText style={[styles.dayChipText, { color: colorScheme === 'dark' ? '#cbd5e1' : '#0369a1' }]}>{dayNames[slot.day_of_week - 1]}</ThemedText>
                 </View>
                 <View style={styles.scheduleInfo}>
                   <ThemedText style={styles.scheduleTime}>
@@ -244,7 +244,7 @@ export default function ClubDetailScreen() {
           )}
         </View>
 
-        <View style={styles.card}>
+        <View style={[styles.card, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
           <ThemedText
             type='subtitle'
             style={styles.cardTitle}
@@ -264,7 +264,7 @@ export default function ClubDetailScreen() {
             </View>
           </View>
 
-          <View style={styles.divider} />
+          <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#e2e8f0' }]} />
 
           <View style={styles.copySection}>
             <ThemedText style={styles.copyLabel}>IBAN</ThemedText>
@@ -343,7 +343,6 @@ const styles = StyleSheet.create({
     borderRadius: 14,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#eef2ff',
     marginRight: 14,
   },
   clubInfo: {
@@ -360,10 +359,9 @@ const styles = StyleSheet.create({
   },
   clubMeta: {
     fontSize: 15,
-    color: '#475569',
+    opacity: 0.7,
   },
   card: {
-    backgroundColor: '#fff',
     borderRadius: 20,
     padding: 18,
     marginBottom: 18,
@@ -385,7 +383,6 @@ const styles = StyleSheet.create({
   dayChip: {
     minWidth: 56,
     borderRadius: 14,
-    backgroundColor: '#e0f2fe',
     paddingVertical: 6,
     paddingHorizontal: 10,
     marginRight: 12,
@@ -393,7 +390,6 @@ const styles = StyleSheet.create({
   dayChipText: {
     fontSize: 13,
     fontWeight: '600',
-    color: '#0369a1',
   },
   scheduleInfo: {
     flex: 1,
@@ -405,11 +401,11 @@ const styles = StyleSheet.create({
   },
   scheduleDuration: {
     fontSize: 13,
-    color: '#475569',
+    opacity: 0.6,
   },
   emptyText: {
     fontSize: 15,
-    color: '#64748b',
+    opacity: 0.6,
   },
   detailRow: {
     flexDirection: 'row',
@@ -432,7 +428,6 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: '#e2e8f0',
     marginVertical: 16,
   },
   copySection: {
@@ -441,7 +436,7 @@ const styles = StyleSheet.create({
   copyLabel: {
     marginBottom: 8,
     fontSize: 14,
-    color: '#475569',
+    opacity: 0.6,
   },
   copyRow: {
     flexDirection: 'row',
@@ -452,7 +447,7 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Fonts.mono,
     fontSize: 14,
-    color: '#111827',
+    color: colors.text,
   },
   copyButton: {
     backgroundColor: '#0a7ea4',

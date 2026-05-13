@@ -156,11 +156,11 @@ export default function PaymentsScreen() {
 
               <View style={styles.paymentRow}>
                 <View>
-                  <ThemedText style={styles.paymentLabel}>Дата</ThemedText>
+                  <ThemedText style={[styles.paymentLabel, { color: colors.icon }]}>Дата</ThemedText>
                   <ThemedText style={styles.paymentValue}>{formatDate(item.nextPaymentDate)}</ThemedText>
                 </View>
                 <View style={styles.amountContainer}>
-                  <ThemedText style={styles.paymentLabel}>Сума</ThemedText>
+                  <ThemedText style={[styles.paymentLabel, { color: colors.icon }]}>Сума</ThemedText>
                   <ThemedText style={styles.paymentValue}>{item.price} ₴</ThemedText>
                 </View>
               </View>
@@ -169,24 +169,26 @@ export default function PaymentsScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.copyButton,
+                    { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff', borderColor: colors.tint + '40' },
                     !item.payment_iban && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
                   onPress={() => handleCopy(item.payment_iban, 'iban')}
                   disabled={!item.payment_iban}
                 >
-                  <ThemedText style={styles.copyButtonText}>IBAN</ThemedText>
+                  <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>IBAN</ThemedText>
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [
                     styles.copyButton,
+                    { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff', borderColor: colors.tint + '40' },
                     !item.payment_card && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
                   onPress={() => handleCopy(item.payment_card, 'card')}
                   disabled={!item.payment_card}
                 >
-                  <ThemedText style={styles.copyButtonText}>Картка</ThemedText>
+                  <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>Картка</ThemedText>
                 </Pressable>
               </View>
             </View>
@@ -212,7 +214,7 @@ export default function PaymentsScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
       <LinearGradient
-        colors={['#0a7ea4', '#06627b']}
+        colors={colorScheme === 'dark' ? ['#1e293b', '#0f172a'] : ['#0a7ea4', '#06627b']}
         style={styles.summaryCard}
       >
         <View style={styles.summaryRow}>
@@ -398,7 +400,7 @@ const styles = StyleSheet.create({
   },
   childName: {
     fontSize: 14,
-    color: '#6b7280',
+    opacity: 0.6,
   },
   paymentRow: {
     flexDirection: 'row',
@@ -408,7 +410,7 @@ const styles = StyleSheet.create({
   },
   paymentLabel: {
     fontSize: 12,
-    color: '#6b7280',
+    opacity: 0.6,
   },
   paymentValue: {
     fontSize: 16,
@@ -425,11 +427,9 @@ const styles = StyleSheet.create({
     flex: 1,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(10,126,164,0.16)',
     paddingVertical: 10,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#fff',
   },
   copyButtonDisabled: {
     opacity: 0.4,
@@ -438,7 +438,6 @@ const styles = StyleSheet.create({
     opacity: 0.65,
   },
   copyButtonText: {
-    color: '#0a7ea4',
     fontWeight: '600',
   },
   payAction: {
@@ -459,6 +458,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   emptyText: {
-    color: '#6b7280',
+    opacity: 0.6,
   },
 });

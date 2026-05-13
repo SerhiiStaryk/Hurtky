@@ -117,7 +117,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Ім’я</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={currentValues.name}
           onChangeText={text => setValue('name', text)}
           placeholder='Ім’я дитини'
@@ -128,7 +128,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
 
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Дата народження</ThemedText>
-        <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground }]} onPress={() => setShowDatePicker(true)}>
+        <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]} onPress={() => setShowDatePicker(true)}>
           <ThemedText style={[styles.dateText, { color: themeColors.text }]}>{formatDate(currentValues.birth_date)}</ThemedText>
         </Pressable>
         {errors.birth_date && <ThemedText style={styles.errorText}>{errors.birth_date.message}</ThemedText>}
@@ -137,7 +137,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Нотатки</ThemedText>
         <TextInput
-          style={[styles.input, styles.textArea, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, styles.textArea, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={currentValues.notes}
           onChangeText={text => setValue('notes', text)}
           placeholder='Додаткові нотатки'
@@ -212,7 +212,7 @@ const styles = StyleSheet.create({
   avatarLabel: {
     marginTop: 12,
     fontSize: 14,
-    color: '#6b7280',
+    opacity: 0.6,
   },
   field: {
     borderRadius: 18,
@@ -232,7 +232,6 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,

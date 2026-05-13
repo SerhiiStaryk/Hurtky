@@ -55,7 +55,7 @@ export default function NewClubScreen() {
       {clubOwnerId <= 0 && children.length > 0 && (
         <View style={[styles.pickerSection, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
           <ThemedText style={styles.label}>Для кого створюємо гурток?</ThemedText>
-          <View style={styles.pickerWrapper}>
+          <View style={[styles.pickerWrapper, { borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}>
             <Picker
               selectedValue={selectedChildId}
               onValueChange={(itemValue) => setSelectedChildId(itemValue)}
@@ -116,7 +116,6 @@ const styles = StyleSheet.create({
   },
   pickerWrapper: {
     borderWidth: 1,
-    borderColor: '#e5e7eb',
     borderRadius: 8,
     overflow: 'hidden',
   },

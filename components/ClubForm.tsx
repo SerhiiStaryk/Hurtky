@@ -171,7 +171,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Назва гуртка</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={formValues.name}
           onChangeText={text => setValue('name', text)}
           placeholder='Назва гуртка'
@@ -183,7 +183,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Викладач</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={formValues.teacher_name}
           onChangeText={text => setValue('teacher_name', text)}
           placeholder='Ім’я викладача'
@@ -194,7 +194,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Місце</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={formValues.location}
           onChangeText={text => setValue('location', text)}
           placeholder='Локація'
@@ -205,7 +205,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Вартість</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
           value={String(formValues.price ?? '')}
           onChangeText={text => {
             const cleaned = text.replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -220,7 +220,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
 
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Наступна оплата</ThemedText>
-        <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground }]} onPress={() => setShowPaymentDatePicker(true)}>
+        <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]} onPress={() => setShowPaymentDatePicker(true)}>
           <ThemedText style={[styles.dateText, { color: themeColors.text }]}>{formValues.next_payment_date ? formatDate(formValues.next_payment_date) : 'Додайте дату'}</ThemedText>
         </Pressable>
         {formValues.next_payment_date ? (
@@ -245,7 +245,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
             <View key={field.id} style={[styles.scheduleCard, { backgroundColor: surfaceColor }]}>
               <View style={styles.scheduleRow}>
                 <ThemedText style={styles.label}>День</ThemedText>
-                <View style={styles.pickerWrapper}>
+                <View style={[styles.pickerWrapper, { borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}>
                   <Picker
                     selectedValue={slot.day_of_week}
                     onValueChange={value => setValue(`schedules.${index}.day_of_week`, value)}
@@ -261,13 +261,13 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
               <View style={styles.timeRow}>
                 <View style={styles.timeBlock}>
                   <ThemedText style={styles.label}>Початок</ThemedText>
-                  <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground }]} onPress={() => setActiveTimePicker({ index, field: 'start_time' })}>
+                  <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]} onPress={() => setActiveTimePicker({ index, field: 'start_time' })}>
                     <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.start_time}</ThemedText>
                   </Pressable>
                 </View>
                 <View style={styles.timeBlock}>
                   <ThemedText style={styles.label}>Кінець</ThemedText>
-                  <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground }]} onPress={() => setActiveTimePicker({ index, field: 'end_time' })}>
+                  <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]} onPress={() => setActiveTimePicker({ index, field: 'end_time' })}>
                     <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.end_time}</ThemedText>
                   </Pressable>
                 </View>
@@ -286,7 +286,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         <View style={styles.fieldBlock}>
           <ThemedText style={styles.label}>IBAN</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
             value={formValues.payment_iban}
             onChangeText={text => setValue('payment_iban', text)}
             placeholder='IBAN'
@@ -296,7 +296,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         <View style={styles.fieldBlock}>
           <ThemedText style={styles.label}>Картка</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
+            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
             value={formValues.payment_card}
             onChangeText={text => setValue('payment_card', text)}
             placeholder='Номер картки'
@@ -399,7 +399,6 @@ const styles = StyleSheet.create({
   input: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,
@@ -432,7 +431,7 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     marginTop: 12,
-    color: '#6b7280',
+    opacity: 0.6,
   },
   scheduleCard: {
     borderRadius: 16,
@@ -450,7 +449,6 @@ const styles = StyleSheet.create({
   pickerWrapper: {
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#e5e7eb',
     overflow: 'hidden',
   },
   picker: {
