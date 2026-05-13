@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
+import { ActivityIndicator, StyleSheet } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useClub, useUpdateClub } from '@/hooks/useClubs';
 import { upsertSchedules } from '@/lib/repositories';

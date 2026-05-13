@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { Alert, ActivityIndicator, SafeAreaView, ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { Alert, ActivityIndicator, ScrollView, StyleSheet, View, Pressable } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import Constants from 'expo-constants';
 import { useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';

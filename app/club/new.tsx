@@ -1,5 +1,6 @@
 import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
-import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useCreateClub } from '@/hooks/useClubs';
 import { upsertSchedules } from '@/lib/repositories';

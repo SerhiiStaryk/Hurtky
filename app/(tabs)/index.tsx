@@ -14,10 +14,10 @@ import {
   FlatList,
   Platform,
   Pressable,
-  SafeAreaView,
   StyleSheet,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface UpcomingLesson {
   id: string;

@@ -20,6 +20,8 @@ export const unstable_settings = {
   anchor: '(tabs)',
 };
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 export default function RootLayout() {
   const [isReady, setIsReady] = useState(false);
   const colorScheme = useColorScheme();
@@ -44,20 +46,22 @@ export default function RootLayout() {
   }
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <QueryClientProvider client={queryClient}>
-        <Stack>
-          <Stack.Screen
-            name='(tabs)'
-            options={{ headerShown: false }}
-          />
-          <Stack.Screen
-            name='modal'
-            options={{ presentation: 'modal', title: 'Modal' }}
-          />
-        </Stack>
-      </QueryClientProvider>
-      <StatusBar style='auto' />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+        <QueryClientProvider client={queryClient}>
+          <Stack>
+            <Stack.Screen
+              name='(tabs)'
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name='modal'
+              options={{ presentation: 'modal', title: 'Modal' }}
+            />
+          </Stack>
+        </QueryClientProvider>
+        <StatusBar style='auto' />
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 }
