@@ -447,7 +447,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontFamily: Fonts.mono,
     fontSize: 14,
-    color: colors.text,
   },
   copyButton: {
     backgroundColor: '#0a7ea4',
