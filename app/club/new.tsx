@@ -4,12 +4,17 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useCreateClub } from '@/hooks/useClubs';
 import { upsertSchedules } from '@/lib/repositories';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemedText } from '@/components/themed-text';
 
 export default function NewClubScreen() {
   const router = useRouter();
   const { childId } = useLocalSearchParams<{ childId?: string }>();
   const createClubMutation = useCreateClub();
   const clubOwnerId = Number(childId ?? '0');
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   const handleSave = async (values: ClubFormValues) => {
     createClubMutation.mutate({ ...values, child_id: clubOwnerId }, {
@@ -24,17 +29,17 @@ export default function NewClubScreen() {
 
   if (!childId || clubOwnerId <= 0) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
         <Stack.Screen options={{ title: 'Додати гурток' }} />
         <View style={styles.messageBox}>
-          <Text style={styles.messageText}>Потрібно вказати дитину для додавання гуртка.</Text>
+          <ThemedText style={styles.messageText}>Потрібно вказати дитину для додавання гуртка.</ThemedText>
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <Stack.Screen options={{ title: 'Додати гурток' }} />
       <ClubForm
         submitLabel='Зберегти гурток'
@@ -47,7 +52,6 @@ export default function NewClubScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
   messageBox: {
     flex: 1,
@@ -57,7 +61,6 @@ const styles = StyleSheet.create({
   },
   messageText: {
     fontSize: 16,
-    color: '#4b5563',
     textAlign: 'center',
   },
 });

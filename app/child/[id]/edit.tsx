@@ -4,6 +4,8 @@ import { ActivityIndicator, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import ChildForm, { ChildFormValues } from '@/components/ChildForm';
 import { useChild, useUpdateChild } from '@/hooks/useChildren';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function EditChildScreen() {
   const router = useRouter();
@@ -11,6 +13,8 @@ export default function EditChildScreen() {
   const childId = Number(id ?? '0');
   const { data: child, isLoading } = useChild(childId);
   const updateChildMutation = useUpdateChild(childId);
+  const colorScheme = useColorScheme();
+  const themeColors = Colors[colorScheme ?? 'light'];
 
   useEffect(() => {
     if (!id || childId <= 0) {
@@ -24,7 +28,7 @@ export default function EditChildScreen() {
 
   if (isLoading || !child) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
         <ActivityIndicator size='large' />
       </SafeAreaView>
     );
@@ -37,7 +41,7 @@ export default function EditChildScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor: themeColors.background }]}>
       <Stack.Screen options={{ title: 'Редагувати дитину' }} />
       <ChildForm
         defaultValues={child}
@@ -51,6 +55,5 @@ export default function EditChildScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
   },
 });

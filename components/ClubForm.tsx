@@ -160,7 +160,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
           {colorOptions.map(color => (
             <Pressable
               key={color}
-              style={[styles.colorDot, { backgroundColor: color, borderColor: color === currentColor ? '#111' : 'transparent' }]}
+              style={[styles.colorDot, { backgroundColor: color, borderColor: color === currentColor ? (colorScheme === 'dark' ? '#fff' : '#111') : 'transparent' }]}
               onPress={() => setValue('color_hex', color)}
             />
           ))}
@@ -170,7 +170,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Назва гуртка</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={formValues.name}
           onChangeText={text => setValue('name', text)}
           placeholder='Назва гуртка'
@@ -182,7 +182,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Викладач</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={formValues.teacher_name}
           onChangeText={text => setValue('teacher_name', text)}
           placeholder='Ім’я викладача'
@@ -193,7 +193,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Місце</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={formValues.location}
           onChangeText={text => setValue('location', text)}
           placeholder='Локація'
@@ -204,7 +204,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Вартість</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={String(formValues.price ?? '')}
           onChangeText={text => {
             const cleaned = text.replace(/[^0-9.,]/g, '').replace(',', '.');
@@ -220,7 +220,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
       <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Наступна оплата</ThemedText>
         <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground }]} onPress={() => setShowPaymentDatePicker(true)}>
-          <ThemedText style={styles.dateText}>{formValues.next_payment_date ? formatDate(formValues.next_payment_date) : 'Додайте дату'}</ThemedText>
+          <ThemedText style={[styles.dateText, { color: themeColors.text }]}>{formValues.next_payment_date ? formatDate(formValues.next_payment_date) : 'Додайте дату'}</ThemedText>
         </Pressable>
         {formValues.next_payment_date ? (
           <Pressable onPress={() => setValue('next_payment_date', '')} style={styles.clearButton}>
@@ -260,13 +260,13 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
                 <View style={styles.timeBlock}>
                   <ThemedText style={styles.label}>Початок</ThemedText>
                   <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground }]} onPress={() => setActiveTimePicker({ index, field: 'start_time' })}>
-                    <ThemedText style={styles.timeText}>{slot.start_time}</ThemedText>
+                    <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.start_time}</ThemedText>
                   </Pressable>
                 </View>
                 <View style={styles.timeBlock}>
                   <ThemedText style={styles.label}>Кінець</ThemedText>
                   <Pressable style={[styles.input, styles.timeInput, { backgroundColor: inputBackground }]} onPress={() => setActiveTimePicker({ index, field: 'end_time' })}>
-                    <ThemedText style={styles.timeText}>{slot.end_time}</ThemedText>
+                    <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.end_time}</ThemedText>
                   </Pressable>
                 </View>
               </View>
@@ -284,7 +284,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         <View style={styles.fieldBlock}>
           <ThemedText style={styles.label}>IBAN</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: inputBackground }]}
+            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
             value={formValues.payment_iban}
             onChangeText={text => setValue('payment_iban', text)}
             placeholder='IBAN'
@@ -294,7 +294,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         <View style={styles.fieldBlock}>
           <ThemedText style={styles.label}>Картка</ThemedText>
           <TextInput
-            style={[styles.input, { backgroundColor: inputBackground }]}
+            style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
             value={formValues.payment_card}
             onChangeText={text => setValue('payment_card', text)}
             placeholder='Номер картки'
@@ -401,14 +401,12 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,
-    color: '#111827',
   },
   dateInput: {
     justifyContent: 'center',
   },
   dateText: {
     fontSize: 16,
-    color: '#111827',
   },
   clearButton: {
     marginTop: 8,
@@ -438,7 +436,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 14,
     padding: 14,
-    backgroundColor: '#fff',
+    backgroundColor: surfaceColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 10,
@@ -470,7 +468,6 @@ const styles = StyleSheet.create({
   },
   timeText: {
     fontSize: 16,
-    color: '#111827',
   },
   removeSlotButton: {
     marginTop: 12,

@@ -105,7 +105,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
           {currentValues.photo_uri ? (
             <Image source={{ uri: currentValues.photo_uri }} style={styles.avatarImage} />
           ) : (
-            <View style={styles.avatarPlaceholder}>
+            <View style={[styles.avatarPlaceholder, { backgroundColor: inputBackground }]}>
               <ThemedText style={styles.avatarEmoji}>{getAvatarLabel(currentValues.name)}</ThemedText>
             </View>
           )}
@@ -116,7 +116,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Ім’я</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground }]}
+          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={currentValues.name}
           onChangeText={text => setValue('name', text)}
           placeholder='Ім’я дитини'
@@ -128,7 +128,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Дата народження</ThemedText>
         <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground }]} onPress={() => setShowDatePicker(true)}>
-          <ThemedText style={styles.dateText}>{formatDate(currentValues.birth_date)}</ThemedText>
+          <ThemedText style={[styles.dateText, { color: themeColors.text }]}>{formatDate(currentValues.birth_date)}</ThemedText>
         </Pressable>
         {errors.birth_date && <ThemedText style={styles.errorText}>{errors.birth_date.message}</ThemedText>}
       </View>
@@ -136,7 +136,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
       <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
         <ThemedText style={styles.label}>Нотатки</ThemedText>
         <TextInput
-          style={[styles.input, styles.textArea, { backgroundColor: inputBackground }]}
+          style={[styles.input, styles.textArea, { backgroundColor: inputBackground, color: themeColors.text }]}
           value={currentValues.notes}
           onChangeText={text => setValue('notes', text)}
           placeholder='Додаткові нотатки'
@@ -235,7 +235,6 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     paddingHorizontal: 14,
     fontSize: 16,
-    color: '#111827',
   },
   textArea: {
     minHeight: 100,
@@ -246,7 +245,6 @@ const styles = StyleSheet.create({
   },
   dateText: {
     fontSize: 16,
-    color: '#111827',
   },
   button: {
     marginTop: 8,
