@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useClub, useUpdateClub } from '@/hooks/useClubs';
@@ -41,6 +41,7 @@ export default function EditClubScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ title: 'Редагувати гурток' }} />
       <ClubForm
         defaultValues={club}
         submitLabel='Зберегти зміни'

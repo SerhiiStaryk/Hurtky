@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { ActivityIndicator, SafeAreaView, StyleSheet } from 'react-native';
 import ChildForm, { ChildFormValues } from '@/components/ChildForm';
 import { useChild, useUpdateChild } from '@/hooks/useChildren';
@@ -37,6 +37,7 @@ export default function EditChildScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ title: 'Редагувати дитину' }} />
       <ChildForm
         defaultValues={child}
         submitLabel='Зберегти зміни'

@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useRouter, Stack } from 'expo-router';
 import { SafeAreaView, StyleSheet } from 'react-native';
 import ChildForm, { ChildFormValues } from '@/components/ChildForm';
 import { useCreateChild } from '@/hooks/useChildren';
@@ -15,6 +15,7 @@ export default function NewChildScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ title: 'Додати дитину' }} />
       <ChildForm
         submitLabel='Зберегти дитину'
         onSubmit={handleSave}

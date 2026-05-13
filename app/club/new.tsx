@@ -1,4 +1,4 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, Stack } from 'expo-router';
 import { SafeAreaView, StyleSheet, Text, View } from 'react-native';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useCreateClub } from '@/hooks/useClubs';
@@ -24,6 +24,7 @@ export default function NewClubScreen() {
   if (!childId || clubOwnerId <= 0) {
     return (
       <SafeAreaView style={styles.container}>
+        <Stack.Screen options={{ title: 'Додати гурток' }} />
         <View style={styles.messageBox}>
           <Text style={styles.messageText}>Потрібно вказати дитину для додавання гуртка.</Text>
         </View>
@@ -33,6 +34,7 @@ export default function NewClubScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <Stack.Screen options={{ title: 'Додати гурток' }} />
       <ClubForm
         submitLabel='Зберегти гурток'
         onSubmit={handleSave}
