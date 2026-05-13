@@ -241,7 +241,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         {fields.map((field, index) => {
           const slot = formValues.schedules?.[index] ?? { day_of_week: 1, start_time: '16:00', end_time: '17:00' };
           return (
-            <View key={field.id} style={styles.scheduleCard}>
+            <View key={field.id} style={[styles.scheduleCard, { backgroundColor: surfaceColor }]}>
               <View style={styles.scheduleRow}>
                 <ThemedText style={styles.label}>День</ThemedText>
                 <View style={styles.pickerWrapper}>
@@ -437,7 +437,6 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     marginTop: 14,
     padding: 14,
-    backgroundColor: surfaceColor,
     shadowColor: '#000',
     shadowOpacity: 0.06,
     shadowRadius: 10,

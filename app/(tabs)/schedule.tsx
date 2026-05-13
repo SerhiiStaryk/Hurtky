@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { startOfWeek, endOfWeek, addWeeks, addDays, format, getISODay } from 'date-fns';
@@ -136,6 +137,31 @@ export default function ScheduleScreen() {
           onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
         >
           <ThemedText style={styles.weekButtonText}>Наступний ›</ThemedText>
+        </Pressable>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.addButton,
+            { opacity: pressed ? 0.7 : 1, marginLeft: 8 }
+          ]}
+          onPress={() => {
+            if (children.length === 1) {
+              router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
+            } else if (children.length > 1) {
+              // For now, let's just go to the first child's profile or home to pick one
+              // Or I can just navigate to /child/[id] for the user to pick.
+              // Actually, let's just go to the home screen where I just added the shortcut.
+              router.push('/(tabs)');
+            } else {
+              router.push('/child/new');
+            }
+          }}
+        >
+          <Ionicons
+            name="add-circle"
+            size={28}
+            color="#0a7ea4"
+          />
         </Pressable>
       </View>
 
@@ -275,6 +301,9 @@ const styles = StyleSheet.create({
   weekLabel: {
     fontSize: 16,
     fontWeight: '700',
+  },
+  addButton: {
+    padding: 4,
   },
   gridContainer: {
     flex: 1,

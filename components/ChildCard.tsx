@@ -1,6 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, View, Image, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from './themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -91,9 +92,24 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
           </View>
         </View>
 
-        {/* Right: Club Count Badge */}
-        <View style={[styles.badge, { backgroundColor: primaryColor }]}>
-          <ThemedText style={[styles.badgeText, { color: '#fff' }]}>{clubCount}</ThemedText>
+        {/* Right: Club Count Badge & Add Club Button */}
+        <View style={styles.rightContent}>
+          <View style={[styles.badge, { backgroundColor: primaryColor }]}>
+            <ThemedText style={[styles.badgeText, { color: '#fff' }]}>{clubCount}</ThemedText>
+          </View>
+          
+          <Pressable
+            style={({ pressed }) => [
+              styles.addClubButton,
+              { opacity: pressed ? 0.6 : 1 }
+            ]}
+            onPress={(e) => {
+              e.stopPropagation();
+              router.push({ pathname: '/club/new', params: { childId: child.id.toString() } });
+            }}
+          >
+            <Ionicons name="add-circle" size={32} color={primaryColor} />
+          </Pressable>
         </View>
       </View>
     </Pressable>
@@ -167,5 +183,14 @@ const styles = StyleSheet.create({
   badgeText: {
     fontSize: 14,
     fontWeight: '600',
+  },
+  rightContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 8,
+  },
+  addClubButton: {
+    marginLeft: 8,
+    padding: 4,
   },
 });

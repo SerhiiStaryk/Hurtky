@@ -11,6 +11,7 @@ import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
   Platform,
   Pressable,
@@ -131,19 +132,42 @@ export default function HomeScreen() {
     <View style={[styles.header, { backgroundColor: colors.background }]}>
       <View style={styles.headerTop}>
         <ThemedText style={styles.title}>Мої діти</ThemedText>
-        <Pressable
-          style={({ pressed }) => [
-            styles.addButton,
-            { opacity: pressed ? 0.7 : 1 },
-          ]}
-          onPress={handleAddChild}
-        >
-          <Ionicons
-            name="add-circle"
-            size={28}
-            color={colors.tint}
-          />
-        </Pressable>
+        <View style={{ flexDirection: 'row' }}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButton,
+              { opacity: pressed ? 0.7 : 1, marginRight: 8 },
+            ]}
+            onPress={() => {
+              if (children.length === 1) {
+                router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
+              } else if (children.length > 1) {
+                Alert.alert('Оберіть дитину', 'Натисніть на іконку "+" на картці дитини, щоб додати гурток.');
+              } else {
+                Alert.alert('Спочатку додайте дитину');
+              }
+            }}
+          >
+            <Ionicons
+              name="school-outline"
+              size={28}
+              color={colors.tint}
+            />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [
+              styles.addButton,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
+            onPress={handleAddChild}
+          >
+            <Ionicons
+              name="person-add-outline"
+              size={28}
+              color={colors.tint}
+            />
+          </Pressable>
+        </View>
       </View>
       {children.length > 0 && (
         <ThemedText style={styles.childCount}>
