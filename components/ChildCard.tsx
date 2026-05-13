@@ -1,11 +1,11 @@
-import React from 'react';
-import { Pressable, StyleSheet, View, Image, Platform } from 'react-native';
-import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
-import { ThemedText } from './themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Child } from '@/lib/repositories';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Image, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { ThemedText } from './themed-text';
 
 interface ChildCardProps {
   child: Child;
@@ -97,7 +97,7 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
           <View style={[styles.badge, { backgroundColor: primaryColor }]}>
             <ThemedText style={[styles.badgeText, { color: '#fff' }]}>{clubCount}</ThemedText>
           </View>
-          
+
           <Pressable
             style={({ pressed }) => [
               styles.addClubButton,
