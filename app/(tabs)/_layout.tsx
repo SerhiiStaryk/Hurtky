@@ -17,7 +17,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name='index'
         options={{
-          title: 'Home',
+          title: 'Головна',
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? 'home' : 'home-outline'}
@@ -30,7 +30,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name='schedule'
         options={{
-          title: 'Schedule',
+          title: 'Розклад',
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? 'calendar' : 'calendar-outline'}
@@ -43,7 +43,7 @@ export default function TabLayout() {
       <Tabs.Screen
         name='payments'
         options={{
-          title: 'Payments',
+          title: 'Платежі',
           tabBarIcon: ({ focused, color, size }) => (
             <Ionicons
               name={focused ? 'card' : 'card-outline'}

@@ -58,7 +58,7 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name='modal'
-                options={{ presentation: 'modal', title: 'Modal' }}
+                options={{ presentation: 'modal', title: 'Модальне вікно' }}
               />
             </Stack>
           </QueryClientProvider>

@@ -5,6 +5,7 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildren } from '@/hooks/useChildren';
 import { getDatabase } from '@/lib/db';
+import { getPlural } from '@/lib/i18n';
 import { Child, Club, Schedule } from '@/lib/repositories';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -169,7 +170,7 @@ export default function HomeScreen() {
       </View>
       {children.length > 0 && (
         <ThemedText style={styles.childCount}>
-          {children.length} {children.length === 1 ? 'дитина' : 'дітей'}
+          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}
         </ThemedText>
       )}
     </View>

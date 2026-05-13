@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
+import { getPlural } from '@/lib/i18n';
 
 interface ChildCardProps {
   child: Child;
@@ -84,10 +85,10 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
             {child.name}
           </ThemedText>
           <View style={styles.metaContainer}>
-            <ThemedText style={styles.meta}>{age} років</ThemedText>
+            <ThemedText style={styles.meta}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
             <ThemedText style={[styles.meta, styles.metaDot]}>•</ThemedText>
             <ThemedText style={styles.meta}>
-              {clubCount} {clubCount === 1 ? 'клуб' : 'клубів'}
+              {clubCount} {getPlural(clubCount, 'гурток', 'гуртки', 'гуртків')}
             </ThemedText>
           </View>
         </View>

@@ -10,6 +10,7 @@ import { useChildren } from '@/hooks/useChildren';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ThemedText } from '@/components/themed-text';
+import { getPlural } from '@/lib/i18n';
 
 const STATUS_COLORS = {
   overdue: '#dc2626',
@@ -221,10 +222,10 @@ export default function PaymentsScreen() {
           </View>
           <View style={styles.summaryStats}>
             <View style={styles.statChip}>
-              <ThemedText style={styles.statText}>{clubs.length} гуртків</ThemedText>
+              <ThemedText style={styles.statText}>{clubs.length} {getPlural(clubs.length, 'гурток', 'гуртки', 'гуртків')}</ThemedText>
             </View>
             <View style={styles.statChip}>
-              <ThemedText style={styles.statText}>{children.length} дітей</ThemedText>
+              <ThemedText style={styles.statText}>{children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}</ThemedText>
             </View>
           </View>
         </View>

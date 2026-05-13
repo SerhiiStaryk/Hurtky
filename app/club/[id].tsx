@@ -6,10 +6,11 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 
 import { useClub, useDeleteClub, useMarkAsPaid } from '@/hooks/useClubs';
 import { ThemedText } from '@/components/themed-text';
+import { getPlural } from '@/lib/i18n';
 import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
-const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 
 function formatDuration(startTime: string, endTime: string) {
   const [startHour, startMinute] = startTime.split(':').map(Number);
@@ -152,7 +153,7 @@ export default function ClubDetailScreen() {
     }
 
     if (diffDays <= 7) {
-      return { label: `Наступні ${diffDays} дн.`, color: '#f59e0b' };
+      return { label: `Наступні ${diffDays} ${getPlural(diffDays, 'день', 'дні', 'днів')}`, color: '#f59e0b' };
     }
 
     return { label: 'Вчасно', color: '#16a34a' };

@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useChild, useDeleteChild } from '@/hooks/useChildren';
 import { useClubsByChild } from '@/hooks/useClubs';
 import { ThemedText } from '@/components/themed-text';
+import { getPlural } from '@/lib/i18n';
 import { ClubCard } from '@/components/ClubCard';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
@@ -32,7 +33,7 @@ export default function ChildProfileScreen() {
   if (!id || childId <= 0) {
     return (
       <View style={styles.container}>
-        <ThemedText style={styles.error}>Child ID is required.</ThemedText>
+        <ThemedText style={styles.error}>ID дитини обов'язковий.</ThemedText>
       </View>
     );
   }
@@ -48,7 +49,7 @@ export default function ChildProfileScreen() {
   if (!child) {
     return (
       <View style={styles.container}>
-        <ThemedText style={styles.error}>Child not found.</ThemedText>
+        <ThemedText style={styles.error}>Дитину не знайдено.</ThemedText>
       </View>
     );
   }
@@ -147,7 +148,7 @@ export default function ChildProfileScreen() {
               )}
             </View>
             <ThemedText style={styles.childName}>{child.name}</ThemedText>
-            <ThemedText style={styles.childAge}>{age} років</ThemedText>
+            <ThemedText style={styles.childAge}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
           </View>
 
           <View style={styles.headerRight}>
@@ -169,7 +170,7 @@ export default function ChildProfileScreen() {
         <View style={styles.statsChips}>
           <View style={styles.chip}>
             <ThemedText style={styles.chipText}>
-              {clubCount} гуртків
+              {clubCount} {getPlural(clubCount, 'гурток', 'гуртки', 'гуртків')}
             </ThemedText>
           </View>
           <View style={styles.chip}>
