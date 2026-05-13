@@ -295,7 +295,12 @@ export async function markClubAsPaid(id: number): Promise<void> {
   }
 
   // Calculate next payment date (1 month from now or from existing date)
-  const baseDate = club.next_payment_date ? new Date(club.next_payment_date) : new Date();
+  let baseDate = club.next_payment_date ? new Date(club.next_payment_date) : new Date();
+
+  // If the date is invalid, fallback to current date
+  if (isNaN(baseDate.getTime())) {
+    baseDate = new Date();
+  }
 
   const nextDate = new Date(baseDate);
   nextDate.setMonth(nextDate.getMonth() + 1);

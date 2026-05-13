@@ -6,6 +6,7 @@ import {
   updateClub,
   deleteClub,
   markClubAsPaid,
+  getAllClubsWithSchedules,
   ClubWithSchedules,
   CreateClubInput,
   UpdateClubInput,
@@ -35,25 +36,11 @@ export function useClub(id: number) {
 
 /**
  * Fetch all clubs across all children with schedules
- * This requires getAllClubsWithSchedules function
  */
 export function useAllClubs() {
   return useQuery({
     queryKey: ['clubs'],
-    queryFn: async () => {
-      // Get all children first
-      const { getChildren } = await import('@/lib/repositories');
-      const children = await getChildren();
-
-      // Gather all clubs from all children
-      const allClubs: ClubWithSchedules[] = [];
-      for (const child of children) {
-        const childClubs = await getClubsByChildId(child.id);
-        allClubs.push(...childClubs);
-      }
-
-      return allClubs;
-    },
+    queryFn: getAllClubsWithSchedules,
   });
 }
 

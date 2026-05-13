@@ -19,7 +19,7 @@ const STATUS_COLORS = {
 };
 
 function formatDate(value?: Date | null) {
-  if (!value) {
+  if (!value || isNaN(value.getTime())) {
     return 'Немає';
   }
 
@@ -34,7 +34,7 @@ export default function PaymentsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { data: clubs = [], isLoading: isClubsLoading } = useAllClubs();
-  const { data: children = [] } = useChildren();
+  const { data: children = [], isLoading: isChildrenLoading } = useChildren();
   const markAsPaidMutation = useMarkAsPaid();
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
@@ -100,7 +100,7 @@ export default function PaymentsScreen() {
     [overdueItems, weekItems, futureItems],
   );
 
-  const totalMonthlyCost = paymentItems.reduce((sum, item) => sum + item.price, 0);
+  const totalMonthlyCost = paymentItems.reduce((sum, item) => sum + (item.price || 0), 0);
   const nearestUpcoming = paymentItems.find(item => item.nextPaymentDate !== null);
 
   const handleCopy = async (value: string | undefined, label: string) => {
@@ -195,7 +195,7 @@ export default function PaymentsScreen() {
     );
   };
 
-  if (isClubsLoading) {
+  if (isClubsLoading || isChildrenLoading) {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.loadingContainer}>
@@ -245,7 +245,7 @@ export default function PaymentsScreen() {
 
       <SectionList
         sections={sections}
-        keyExtractor={item => item.id.toString()}
+        keyExtractor={item => item?.id?.toString() ?? Math.random().toString()}
         contentContainerStyle={styles.listContent}
         renderSectionHeader={({ section: { title } }) => (
           <View style={styles.sectionHeader}>
