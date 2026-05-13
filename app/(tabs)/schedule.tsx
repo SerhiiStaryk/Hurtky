@@ -6,6 +6,8 @@ import { useRouter } from 'expo-router';
 import { startOfWeek, endOfWeek, addWeeks, addDays, format, getISODay } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { ThemedText } from '@/components/themed-text';
+import { ThemedView } from '@/components/themed-view';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { useAllClubs } from '@/hooks/useClubs';
 import { useChildren } from '@/hooks/useChildren';
 
@@ -41,6 +43,18 @@ export default function ScheduleScreen() {
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
   const todayIsoDay = getISODay(new Date());
+
+  const backgroundColor = useThemeColor({}, 'background');
+  const tintColor = useThemeColor({}, 'tint');
+  const weekButtonBg = useThemeColor({ light: '#F2F2F7', dark: '#2C2C2E' }, 'background');
+  const todayColumnBg = useThemeColor({ light: '#FFF7E6', dark: '#2C2410' }, 'background');
+  const dayHeaderBg = useThemeColor({ light: '#F3F4F6', dark: '#2C2C2E' }, 'background');
+  const todayHeaderBg = useThemeColor({ light: '#FEF3C7', dark: '#3D331A' }, 'background');
+  const emptyDayBg = useThemeColor({ light: '#F8FAFC', dark: '#1C1C1E' }, 'background');
+  const legendChipBg = useThemeColor({ light: '#F8FAFC', dark: '#2C2C2E' }, 'background');
+  const mutedTextColor = useThemeColor({ light: '#6B7280', dark: '#9CA3AF' }, 'text');
+  const blockTimeColor = useThemeColor({ light: '#374151', dark: '#D1D5DB' }, 'text');
+  const blockChildColor = useThemeColor({ light: '#4B5563', dark: '#9CA3AF' }, 'text');
 
   const weekLabel = useMemo(() => {
     const startDay = format(weekStart, 'd', { locale: uk });
@@ -119,10 +133,14 @@ export default function ScheduleScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={[styles.container, { backgroundColor }]}>
       <View style={styles.headerRow}>
         <Pressable
-          style={({ pressed }) => [styles.weekButton, pressed && styles.weekButtonPressed]}
+          style={({ pressed }) => [
+            styles.weekButton,
+            { backgroundColor: weekButtonBg },
+            pressed && styles.weekButtonPressed
+          ]}
           onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
         >
           <ThemedText style={styles.weekButtonText}>‹ Попередній</ThemedText>
@@ -133,7 +151,11 @@ export default function ScheduleScreen() {
         </View>
 
         <Pressable
-          style={({ pressed }) => [styles.weekButton, pressed && styles.weekButtonPressed]}
+          style={({ pressed }) => [
+            styles.weekButton,
+            { backgroundColor: weekButtonBg },
+            pressed && styles.weekButtonPressed
+          ]}
           onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
         >
           <ThemedText style={styles.weekButtonText}>Наступний ›</ThemedText>
@@ -148,9 +170,6 @@ export default function ScheduleScreen() {
             if (children.length === 1) {
               router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
             } else if (children.length > 1) {
-              // For now, let's just go to the first child's profile or home to pick one
-              // Or I can just navigate to /child/[id] for the user to pick.
-              // Actually, let's just go to the home screen where I just added the shortcut.
               router.push('/(tabs)');
             } else {
               router.push('/child/new');
@@ -160,7 +179,7 @@ export default function ScheduleScreen() {
           <Ionicons
             name="add-circle"
             size={28}
-            color="#0a7ea4"
+            color={tintColor}
           />
         </Pressable>
       </View>
@@ -175,7 +194,7 @@ export default function ScheduleScreen() {
               key={label}
               style={styles.timeAxisRow}
             >
-              <ThemedText style={styles.timeLabel}>{label}</ThemedText>
+              <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>{label}</ThemedText>
             </View>
           ))}
         </View>
@@ -194,16 +213,20 @@ export default function ScheduleScreen() {
               return (
                 <View
                   key={label}
-                  style={[styles.column, isToday && styles.todayColumn]}
+                  style={[styles.column, isToday && { backgroundColor: todayColumnBg, borderRadius: 12 }]}
                 >
-                  <View style={[styles.dayHeader, isToday && styles.todayHeader]}>
+                  <View style={[
+                    styles.dayHeader,
+                    { backgroundColor: dayHeaderBg },
+                    isToday && { backgroundColor: todayHeaderBg }
+                  ]}>
                     <ThemedText style={styles.dayName}>{label}</ThemedText>
                     <ThemedText style={styles.dayDate}>{format(date, 'd', { locale: uk })}</ThemedText>
                   </View>
 
                   {items.length === 0 ? (
-                    <View style={styles.emptyDay}>
-                      <ThemedText style={styles.emptyDayText}>Немає занять</ThemedText>
+                    <View style={[styles.emptyDay, { backgroundColor: emptyDayBg }]}>
+                      <ThemedText style={[styles.emptyDayText, { color: mutedTextColor }]}>Немає занять</ThemedText>
                     </View>
                   ) : (
                     items.map(item => (
@@ -227,11 +250,11 @@ export default function ScheduleScreen() {
                             {item.clubName}
                           </ThemedText>
                         </View>
-                        <ThemedText style={styles.blockTime}>
+                        <ThemedText style={[styles.blockTime, { color: blockTimeColor }]}>
                           {item.startTime} - {item.endTime}
                         </ThemedText>
                         <ThemedText
-                          style={styles.blockChild}
+                          style={[styles.blockChild, { color: blockChildColor }]}
                           numberOfLines={1}
                         >
                           {childMap.get(item.childId) ?? 'Дитина'}
@@ -252,7 +275,7 @@ export default function ScheduleScreen() {
           {childLegend.map(entry => (
             <View
               key={entry.id}
-              style={styles.legendChip}
+              style={[styles.legendChip, { backgroundColor: legendChipBg }]}
             >
               <View style={[styles.legendDot, { backgroundColor: hexToRgba(entry.color, 1) }]} />
               <ThemedText style={styles.legendText}>{entry.name}</ThemedText>
@@ -284,7 +307,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 10,
-    backgroundColor: '#F2F2F7',
   },
   weekButtonPressed: {
     opacity: 0.8,
@@ -328,7 +350,6 @@ const styles = StyleSheet.create({
   },
   timeLabel: {
     fontSize: 12,
-    color: '#6B7280',
     textAlign: 'right',
     paddingRight: 6,
   },
@@ -340,7 +361,6 @@ const styles = StyleSheet.create({
     paddingRight: 8,
   },
   todayColumn: {
-    backgroundColor: '#FFF7E6',
     borderRadius: 12,
   },
   dayHeader: {
@@ -348,11 +368,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     borderRadius: 10,
     marginBottom: 8,
-    backgroundColor: '#F3F4F6',
     alignItems: 'center',
   },
   todayHeader: {
-    backgroundColor: '#FEF3C7',
   },
   dayName: {
     fontSize: 12,
@@ -367,11 +385,9 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
     paddingHorizontal: 10,
     borderRadius: 10,
-    backgroundColor: '#F8FAFC',
   },
   emptyDayText: {
     fontSize: 12,
-    color: '#9CA3AF',
     textAlign: 'center',
   },
   scheduleBlock: {
@@ -397,12 +413,10 @@ const styles = StyleSheet.create({
   },
   blockTime: {
     fontSize: 12,
-    color: '#374151',
     marginBottom: 4,
   },
   blockChild: {
     fontSize: 11,
-    color: '#4B5563',
   },
   legendContainer: {
     marginTop: 16,
@@ -422,7 +436,6 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 12,
     borderRadius: 999,
-    backgroundColor: '#F8FAFC',
     marginRight: 8,
     marginBottom: 8,
   },
