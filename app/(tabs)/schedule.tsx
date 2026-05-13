@@ -416,10 +416,8 @@ export default function ScheduleScreen() {
               { opacity: pressed ? 0.7 : 1 }
             ]}
             onPress={() => {
-              if (children.length === 1) {
-                router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
-              } else if (children.length > 1) {
-                router.push('/(tabs)');
+              if (children.length >= 1) {
+                router.push('/club/new');
               } else {
                 router.push('/child/new');
               }

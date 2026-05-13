@@ -54,11 +54,12 @@ export default function NewClubScreen() {
       
       {clubOwnerId <= 0 && children.length > 0 && (
         <View style={[styles.pickerSection, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
-          <ThemedText style={styles.label}>Оберіть дитину:</ThemedText>
+          <ThemedText style={styles.label}>Для кого створюємо гурток?</ThemedText>
           <View style={styles.pickerWrapper}>
             <Picker
               selectedValue={selectedChildId}
               onValueChange={(itemValue) => setSelectedChildId(itemValue)}
+              dropdownIconColor={themeColors.tint}
               style={{ color: themeColors.text }}
             >
               {children.map((child) => (

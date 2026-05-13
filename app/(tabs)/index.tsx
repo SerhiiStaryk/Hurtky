@@ -139,10 +139,8 @@ export default function HomeScreen() {
               { opacity: pressed ? 0.7 : 1, marginRight: 8 },
             ]}
             onPress={() => {
-              if (children.length === 1) {
-                router.push({ pathname: '/club/new', params: { childId: children[0].id.toString() } });
-              } else if (children.length > 1) {
-                Alert.alert('Оберіть дитину', 'Натисніть на іконку "+" на картці дитини, щоб додати гурток.');
+              if (children.length >= 1) {
+                router.push('/club/new');
               } else {
                 Alert.alert('Спочатку додайте дитину');
               }

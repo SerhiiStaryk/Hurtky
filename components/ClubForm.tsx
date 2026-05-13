@@ -24,7 +24,7 @@ export const clubSchema = z.object({
       start_time: z.string().min(1, 'Початковий час обов’язковий'),
       end_time: z.string().min(1, 'Кінцевий час обов’язковий'),
     }),
-  ),
+  ).min(1, 'Додайте принаймні один слот розкладу'),
 });
 
 export type ClubFormValues = z.infer<typeof clubSchema>;
@@ -42,8 +42,8 @@ const initialValues: ClubFormValues = {
   schedules: [],
 };
 
-const emojiOptions = ['🎭', '🎨', '🤸', '🎻', '⚽', '🎹', '🧩', '🏀'];
-const colorOptions = ['#4F46E5', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#22c55e'];
+const emojiOptions = ['🎭', '🎨', '🤸', '🎻', '⚽', '🎹', '🧩', '🏀', '🎤', '💻', '🧪', '🧘', '💃', '🧪', '📚', '🏸', '🥋'];
+const colorOptions = ['#4F46E5', '#14b8a6', '#f59e0b', '#ef4444', '#8b5cf6', '#22c55e', '#ec4899', '#06b6d4', '#f97316'];
 const dayOptions = [
   { label: 'Пн', value: 1 },
   { label: 'Вт', value: 2 },
@@ -235,7 +235,8 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
         <Pressable style={styles.addSlotButton} onPress={addScheduleSlot}>
           <ThemedText style={styles.addSlotText}>+ Додати слот</ThemedText>
         </Pressable>
-        {fields.length === 0 ? (
+        {errors.schedules && <ThemedText style={styles.errorText}>{errors.schedules.message}</ThemedText>}
+        {fields.length === 0 && !errors.schedules ? (
           <ThemedText style={styles.emptyText}>Додайте принаймні один слот розкладу.</ThemedText>
         ) : null}
         {fields.map((field, index) => {
