@@ -24,6 +24,7 @@ export default function NewChildScreen() {
       <ChildForm
         submitLabel='Зберегти дитину'
         onSubmit={handleSave}
+        isLoading={createChildMutation.isPending}
       />
     </SafeAreaView>
   );

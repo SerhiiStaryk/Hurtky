@@ -6,8 +6,8 @@ export interface Child {
   id: number;
   name: string;
   birth_date: string; // ISO date string
-  photo_uri?: string;
-  notes?: string;
+  photo_uri?: string | null;
+  notes?: string | null;
   created_at: string;
 }
 
@@ -15,14 +15,14 @@ export interface Club {
   id: number;
   child_id: number;
   name: string;
-  teacher_name?: string;
-  location?: string;
+  teacher_name?: string | null;
+  location?: string | null;
   color_hex: string;
   emoji: string;
   price: number;
-  next_payment_date?: string;
-  payment_iban?: string;
-  payment_card?: string;
+  next_payment_date?: string | null;
+  payment_iban?: string | null;
+  payment_card?: string | null;
   created_at: string;
 }
 

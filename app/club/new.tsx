@@ -44,6 +44,7 @@ export default function NewClubScreen() {
       <ClubForm
         submitLabel='Зберегти гурток'
         onSubmit={handleSave}
+        isLoading={createClubMutation.isPending}
       />
     </SafeAreaView>
   );

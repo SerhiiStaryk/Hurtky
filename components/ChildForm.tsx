@@ -11,8 +11,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 export const childSchema = z.object({
   name: z.string().min(1, 'Ім’я обов’язкове'),
   birth_date: z.string().min(1, 'Дата народження обов’язкова'),
-  photo_uri: z.string().optional(),
-  notes: z.string().optional(),
+  photo_uri: z.string().nullable().optional(),
+  notes: z.string().nullable().optional(),
 });
 
 export type ChildFormValues = z.infer<typeof childSchema>;
@@ -92,6 +92,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
   const handleSave = (values: ChildFormValues) => {
     const parsed = childSchema.safeParse(values);
     if (!parsed.success) {
+      console.error('Validation failed:', parsed.error.format());
       return;
     }
 

@@ -47,6 +47,7 @@ export default function EditChildScreen() {
         defaultValues={child}
         submitLabel='Зберегти зміни'
         onSubmit={handleSave}
+        isLoading={updateChildMutation.isPending}
       />
     </SafeAreaView>
   );

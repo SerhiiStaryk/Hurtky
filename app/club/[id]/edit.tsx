@@ -51,6 +51,7 @@ export default function EditClubScreen() {
         defaultValues={club}
         submitLabel='Зберегти зміни'
         onSubmit={handleSave}
+        isLoading={updateClubMutation.isPending}
       />
     </SafeAreaView>
   );

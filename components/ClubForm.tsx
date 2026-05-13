@@ -10,14 +10,14 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const clubSchema = z.object({
   name: z.string().min(1, 'Назва гуртка обов’язкова'),
-  teacher_name: z.string().optional(),
-  location: z.string().optional(),
+  teacher_name: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
   emoji: z.string().min(1, 'Емодзі обов’язкове'),
   color_hex: z.string().min(1, 'Колір обов’язковий'),
   price: z.number().min(0, 'Вартість повинна бути числом'),
-  next_payment_date: z.string().optional(),
-  payment_iban: z.string().optional(),
-  payment_card: z.string().optional(),
+  next_payment_date: z.string().nullable().optional(),
+  payment_iban: z.string().nullable().optional(),
+  payment_card: z.string().nullable().optional(),
   schedules: z.array(
     z.object({
       day_of_week: z.number().min(1).max(7),
@@ -113,6 +113,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
   const handleSave = (values: ClubFormValues) => {
     const parsed = clubSchema.safeParse(values);
     if (!parsed.success) {
+      console.error('Validation failed:', parsed.error.format());
       return;
     }
 
