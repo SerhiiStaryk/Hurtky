@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import * as DocumentPicker from 'expo-document-picker';
-import * as FileSystem from 'expo-file-system';
+import { File, Paths } from 'expo-file-system/next';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { exportBackup, importBackup } from './backup';
@@ -29,50 +29,21 @@ export async function saveAndShareBackup(): Promise<void> {
     return;
   }
 
-  // Android — використовуємо Storage Access Framework (SAF)
-  // щоб зберегти файл напряму в папку обрану користувачем
-  if (Platform.OS === 'android') {
-    const permissions =
-      await FileSystem.StorageAccessFramework.requestDirectoryPermissionsAsync();
-
-    if (!permissions.granted) {
-      throw new Error('Немає дозволу на доступ до сховища');
-    }
-
-    const fileUri =
-      await FileSystem.StorageAccessFramework.createFileAsync(
-        permissions.directoryUri,
-        filename,
-        'application/json',
-      );
-
-    await FileSystem.writeAsStringAsync(fileUri, json, {
-      encoding: FileSystem.EncodingType.UTF8,
-    });
-
-    return;
-  }
-
-  // iOS — стандартний sharing
+  // Native (iOS / Android)
   const isSharingAvailable = await Sharing.isAvailableAsync();
   if (!isSharingAvailable) {
     throw new Error('Функція "Поділитись" недоступна на цьому пристрої');
   }
 
-  const cacheDir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
-  if (!cacheDir) {
+  const dir = Paths.cache ?? Paths.document;
+  if (!dir) {
     throw new Error('Файлова система недоступна на цьому пристрої');
   }
 
-  const fileUri = cacheDir.endsWith('/')
-    ? `${cacheDir}${filename}`
-    : `${cacheDir}/${filename}`;
+  const file = new File(dir, filename);
+  await file.write(json);
 
-  await FileSystem.writeAsStringAsync(fileUri, json, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
-
-  await Sharing.shareAsync(fileUri, {
+  await Sharing.shareAsync(file.uri, {
     mimeType: 'application/json',
     dialogTitle: 'Зберегти резервну копію',
     UTI: 'public.json',
@@ -90,9 +61,9 @@ export async function pickAndImportBackup(): Promise<ImportResult> {
 
   // Web — читаємо з File об'єкта напряму
   if (Platform.OS === 'web') {
-    const file = (result.assets?.[0] as any)?.file;
-    if (file) {
-      const text = await file.text();
+    const webFile = (result.assets?.[0] as any)?.file;
+    if (webFile) {
+      const text = await webFile.text();
       return await importBackup(text);
     }
     return { imported: 0, errors: ['Не вдалося прочитати файл резервної копії'] };
@@ -105,9 +76,8 @@ export async function pickAndImportBackup(): Promise<ImportResult> {
     return { imported: 0, errors: ['Не вдалося прочитати файл резервної копії'] };
   }
 
-  const json = await FileSystem.readAsStringAsync(uri, {
-    encoding: FileSystem.EncodingType.UTF8,
-  });
+  const file = new File(uri);
+  const json = await file.text();
 
   return await importBackup(json);
 }
