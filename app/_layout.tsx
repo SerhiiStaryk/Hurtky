@@ -64,7 +64,7 @@ export default function RootLayout() {
               />
             </Stack>
           </QueryClientProvider>
-          <StatusBar style='auto' />
+          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
         </ThemeProvider>
       </SafeAreaProvider>
     </GestureHandlerRootView>

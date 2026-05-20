@@ -28,6 +28,7 @@ export default function ChildProfileScreen() {
     navigation.setOptions({
       title: child?.name ?? 'Дитина',
       headerBackTitle: 'Назад',
+      headerShown: false,
     });
   }, [navigation, child]);
 
@@ -171,7 +172,13 @@ export default function ChildProfileScreen() {
             )}
           </View>
           <View style={styles.nameContainer}>
-            <ThemedText style={styles.childName}>{child.name}</ThemedText>
+            <ThemedText
+              style={styles.childName}
+              numberOfLines={1}
+              ellipsizeMode='tail'
+            >
+              {child.name}
+            </ThemedText>
             <ThemedText style={styles.childAge}>
               {age} {getPlural(age, 'рік', 'роки', 'років')}
             </ThemedText>
@@ -318,6 +325,7 @@ const styles = StyleSheet.create({
     fontSize: 22,
     fontWeight: '900',
     color: 'white',
+    flexShrink: 1,
   },
   childAge: {
     fontSize: 14,

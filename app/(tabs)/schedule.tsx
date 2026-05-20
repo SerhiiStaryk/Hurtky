@@ -1,17 +1,16 @@
-import { useMemo, useState, useRef, useEffect } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { startOfWeek, endOfWeek, addWeeks, addDays, format, isSameDay, getISODay } from 'date-fns';
-import { uk } from 'date-fns/locale';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { useThemeColor } from '@/hooks/use-theme-color';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 import { Colors } from '@/constants/theme';
-import { useAllClubs } from '@/hooks/useClubs';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChildren } from '@/hooks/useChildren';
+import { useAllClubs } from '@/hooks/useClubs';
+import { Ionicons } from '@expo/vector-icons';
+import { addDays, addWeeks, endOfWeek, format, getISODay, isSameDay, startOfWeek } from 'date-fns';
+import { uk } from 'date-fns/locale';
+import { useRouter } from 'expo-router';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 const TIME_LABELS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
@@ -38,6 +37,24 @@ function hexToRgba(hex: string, alpha = 0.9) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function getContrastingTextColor(hex: string) {
+  const normalized = hex.replace('#', '');
+  const value =
+    normalized.length === 3
+      ? normalized
+          .split('')
+          .map(c => c + c)
+          .join('')
+      : normalized;
+
+  const r = parseInt(value.slice(0, 2), 16);
+  const g = parseInt(value.slice(2, 4), 16);
+  const b = parseInt(value.slice(4, 6), 16);
+  const brightness = (r * 299 + g * 587 + b * 114) / 1000;
+
+  return brightness > 150 ? '#111111' : '#ffffff';
+}
+
 function capitalize(value: string) {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
@@ -53,7 +70,6 @@ export default function ScheduleScreen() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
-
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
@@ -139,22 +155,22 @@ export default function ScheduleScreen() {
   const getBlockStyle = (startTime: string, endTime: string) => {
     const startMins = getTimeMinutes(startTime);
     const endMins = getTimeMinutes(endTime);
-    const startOffset = startMins - (START_HOUR * 60);
-    
+    const startOffset = startMins - START_HOUR * 60;
+
     const top = (startOffset / 60) * HOUR_HEIGHT;
     const duration = (endMins - startMins) / 60;
-    const height = Math.max(duration * HOUR_HEIGHT, 40); // min height for readability
+    const height = Math.max(duration * HOUR_HEIGHT, 70); // min height for readability
 
     return {
       top,
-      height: height - 4, // margin between blocks
+      height: height - 6, // margin between blocks
     };
   };
 
   const goToToday = () => {
     const now = new Date();
     setWeekStart(startOfWeek(now, { weekStartsOn: 1 }));
-    
+
     // Use a small timeout to ensure state update/render happens if week changed
     setTimeout(() => {
       const dayIndex = getISODay(now) - 1;
@@ -173,7 +189,10 @@ export default function ScheduleScreen() {
   }, [isLoading]);
 
   const renderGridView = () => (
-    <ScrollView style={styles.verticalScroll} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.verticalScroll}
+      showsVerticalScrollIndicator={false}
+    >
       <View style={styles.gridContainer}>
         <View style={styles.timeAxis}>
           <View style={styles.timeAxisHeader}>
@@ -208,11 +227,13 @@ export default function ScheduleScreen() {
                   key={label}
                   style={[styles.column, isToday && { backgroundColor: todayColumnBg, borderRadius: 12 }]}
                 >
-                  <View style={[
-                    styles.dayHeader,
-                    { backgroundColor: dayHeaderBg },
-                    isToday && { backgroundColor: todayHeaderBg }
-                  ]}>
+                  <View
+                    style={[
+                      styles.dayHeader,
+                      { backgroundColor: dayHeaderBg },
+                      isToday && { backgroundColor: todayHeaderBg },
+                    ]}
+                  >
                     <ThemedText style={styles.dayName}>{label}</ThemedText>
                     <ThemedText style={styles.dayDate}>{format(date, 'd', { locale: uk })}</ThemedText>
                   </View>
@@ -220,20 +241,22 @@ export default function ScheduleScreen() {
                   <View style={styles.columnContent}>
                     {/* Grid Lines */}
                     {TIME_LABELS.map(t => (
-                      <View 
-                        key={t} 
+                      <View
+                        key={t}
                         style={[
-                          styles.gridLine, 
-                          { 
+                          styles.gridLine,
+                          {
                             top: ((getTimeMinutes(t) - START_HOUR * 60) / 60) * HOUR_HEIGHT,
-                            borderTopColor: dayHeaderBg 
-                          }
-                        ]} 
+                            borderTopColor: dayHeaderBg,
+                          },
+                        ]}
                       />
                     ))}
 
                     {items.map(item => {
                       const blockStyle = getBlockStyle(item.startTime, item.endTime);
+                      const blockTextColor = getContrastingTextColor(item.colorHex);
+
                       return (
                         <Pressable
                           key={`${item.clubId}-${item.startTime}-${item.endTime}`}
@@ -246,23 +269,27 @@ export default function ScheduleScreen() {
                               height: blockStyle.height,
                             },
                           ]}
-                          onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
+                          onPress={() =>
+                            router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })
+                          }
                         >
                           <View style={styles.blockTitleRow}>
-                            <ThemedText style={styles.blockEmoji}>{item.clubEmoji}</ThemedText>
+                            <ThemedText style={[styles.blockEmoji, { color: blockTextColor }]}>
+                              {item.clubEmoji}
+                            </ThemedText>
                             <ThemedText
-                              style={styles.blockTitle}
+                              style={[styles.blockTitle, { color: blockTextColor }]}
                               numberOfLines={1}
                             >
                               {item.clubName}
                             </ThemedText>
                           </View>
                           <View>
-                            <ThemedText style={[styles.blockTime, { color: blockTimeColor }]}>
+                            <ThemedText style={[styles.blockTime, { color: blockTextColor }]}>
                               {item.startTime} - {item.endTime}
                             </ThemedText>
                             <ThemedText
-                              style={[styles.blockChild, { color: blockChildColor }]}
+                              style={[styles.blockChild, { color: blockTextColor }]}
                               numberOfLines={1}
                             >
                               {childMap.get(item.childId) ?? 'Дитина'}
@@ -282,7 +309,10 @@ export default function ScheduleScreen() {
   );
 
   const renderListView = () => (
-    <ScrollView style={styles.listContainer} showsVerticalScrollIndicator={false}>
+    <ScrollView
+      style={styles.listContainer}
+      showsVerticalScrollIndicator={false}
+    >
       {DAY_LABELS.map((label, index) => {
         const isoDay = index + 1;
         const items = scheduleItemsByDay.get(isoDay) ?? [];
@@ -292,25 +322,24 @@ export default function ScheduleScreen() {
         if (items.length === 0) return null;
 
         return (
-          <View key={label} style={styles.listSection}>
+          <View
+            key={label}
+            style={styles.listSection}
+          >
             <View style={styles.listDayHeaderRow}>
-              <ThemedText style={[styles.listDayName, isToday && { color: tintColor }]}>
-                {label}
-              </ThemedText>
-              <ThemedText style={styles.listDayDate}>
-                {format(date, 'd MMMM', { locale: uk })}
-              </ThemedText>
+              <ThemedText style={[styles.listDayName, isToday && { color: tintColor }]}>{label}</ThemedText>
+              <ThemedText style={styles.listDayDate}>{format(date, 'd MMMM', { locale: uk })}</ThemedText>
             </View>
             {items.map(item => (
               <Pressable
                 key={`${item.clubId}-${item.startTime}-${item.endTime}`}
                 style={({ pressed }) => [
                   styles.listItem,
-                  { 
+                  {
                     backgroundColor: hexToRgba(item.colorHex, 0.12),
                     borderLeftColor: item.colorHex,
-                    opacity: pressed ? 0.7 : 1
-                  }
+                    opacity: pressed ? 0.7 : 1,
+                  },
                 ]}
                 onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
               >
@@ -321,13 +350,25 @@ export default function ScheduleScreen() {
                 <View style={styles.listItemContent}>
                   <View style={styles.listItemTitleRow}>
                     <ThemedText style={styles.listItemEmoji}>{item.clubEmoji}</ThemedText>
-                    <ThemedText style={styles.listItemTitle} numberOfLines={1}>{item.clubName}</ThemedText>
+                    <ThemedText
+                      style={styles.listItemTitle}
+                      numberOfLines={1}
+                    >
+                      {item.clubName}
+                    </ThemedText>
                   </View>
-                  <ThemedText style={[styles.listItemChild, { color: blockChildColor }]} numberOfLines={1}>
+                  <ThemedText
+                    style={[styles.listItemChild, { color: blockChildColor }]}
+                    numberOfLines={1}
+                  >
                     {childMap.get(item.childId) ?? 'Дитина'}
                   </ThemedText>
                 </View>
-                <Ionicons name="chevron-forward" size={18} color={mutedTextColor} />
+                <Ionicons
+                  name='chevron-forward'
+                  size={18}
+                  color={mutedTextColor}
+                />
               </Pressable>
             ))}
           </View>
@@ -335,7 +376,11 @@ export default function ScheduleScreen() {
       })}
       {Array.from(scheduleItemsByDay.values()).every(arr => arr.length === 0) && (
         <View style={styles.emptyWeek}>
-          <Ionicons name="calendar-outline" size={48} color={mutedTextColor} />
+          <Ionicons
+            name='calendar-outline'
+            size={48}
+            color={mutedTextColor}
+          />
           <ThemedText style={{ color: mutedTextColor, marginTop: 12, textAlign: 'center' }}>
             На цьому тижні немає занять
           </ThemedText>
@@ -350,7 +395,10 @@ export default function ScheduleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size='large' color={tintColor} />
+          <ActivityIndicator
+            size='large'
+            color={tintColor}
+          />
         </View>
       </SafeAreaView>
     );
@@ -364,18 +412,22 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed
+              pressed && styles.weekButtonPressed,
             ]}
             onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
           >
-            <Ionicons name="chevron-back" size={20} color={colors.tint} />
+            <Ionicons
+              name='chevron-back'
+              size={20}
+              color={colors.tint}
+            />
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [
               styles.todayButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed
+              pressed && styles.weekButtonPressed,
             ]}
             onPress={goToToday}
           >
@@ -386,11 +438,15 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed
+              pressed && styles.weekButtonPressed,
             ]}
             onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
           >
-            <Ionicons name="chevron-forward" size={20} color={colors.tint} />
+            <Ionicons
+              name='chevron-forward'
+              size={20}
+              color={colors.tint}
+            />
           </Pressable>
         </View>
 
@@ -399,14 +455,14 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.viewToggleButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed
+              pressed && styles.weekButtonPressed,
             ]}
-            onPress={() => setViewType(prev => prev === 'grid' ? 'list' : 'grid')}
+            onPress={() => setViewType(prev => (prev === 'grid' ? 'list' : 'grid'))}
           >
-            <Ionicons 
-              name={viewType === 'grid' ? 'list-outline' : 'grid-outline'} 
-              size={20} 
-              color={colors.tint} 
+            <Ionicons
+              name={viewType === 'grid' ? 'list-outline' : 'grid-outline'}
+              size={20}
+              color={colors.tint}
             />
           </Pressable>
         </View>
@@ -624,8 +680,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  todayHeader: {
-  },
+  todayHeader: {},
   dayName: {
     fontSize: 12,
     fontWeight: '700',
@@ -648,8 +703,9 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     borderRadius: 8,
-    padding: 8,
+    padding: 10,
     justifyContent: 'space-between',
+    minHeight: 60,
     zIndex: 1,
   },
   blockTitleRow: {
