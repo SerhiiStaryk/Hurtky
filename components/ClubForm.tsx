@@ -6,7 +6,7 @@ import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
 import { useFieldArray, useForm } from 'react-hook-form';
-import { Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { z } from 'zod';
 
 export const clubSchema = z.object({
@@ -177,292 +177,310 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
   };
 
   return (
-    <ScrollView
-      contentContainerStyle={[styles.container, { backgroundColor: themeColors.background }]}
-      keyboardShouldPersistTaps='handled'
+    <KeyboardAvoidingView
+      style={styles.keyboardAvoiding}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 90 : 0}
     >
-      <View style={[styles.section, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.sectionTitle}>Емодзі</ThemedText>
-        <Pressable
-          style={[styles.emojiButton, { borderColor: currentColor }]}
-          onPress={selectNextEmoji}
-        >
-          <ThemedText style={[styles.emojiText, { color: currentColor }]}>{currentEmoji}</ThemedText>
-        </Pressable>
-      </View>
+      <ScrollView
+        contentContainerStyle={[styles.container, { backgroundColor: themeColors.background }]}
+        keyboardShouldPersistTaps='handled'
+      >
+        <View style={[styles.section, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.sectionTitle}>Емодзі</ThemedText>
+          <Pressable
+            style={[styles.emojiButton, { borderColor: currentColor }]}
+            onPress={selectNextEmoji}
+          >
+            <ThemedText style={[styles.emojiText, { color: currentColor }]}>{currentEmoji}</ThemedText>
+          </Pressable>
+        </View>
 
-      <View style={[styles.section, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.sectionTitle}>Колір</ThemedText>
-        <View style={styles.colorRow}>
-          {colorOptions.map(color => (
+        <View style={[styles.section, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.sectionTitle}>Колір</ThemedText>
+          <View style={styles.colorRow}>
+            {colorOptions.map(color => (
+              <Pressable
+                key={color}
+                style={[
+                  styles.colorDot,
+                  {
+                    backgroundColor: color,
+                    borderColor: color === currentColor ? (colorScheme === 'dark' ? '#fff' : '#111') : 'transparent',
+                  },
+                ]}
+                onPress={() => setValue('color_hex', color)}
+              />
+            ))}
+          </View>
+        </View>
+
+        <View style={[styles.field, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.label}>Назва гуртка</ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: inputBackground,
+                color: themeColors.text,
+                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+              },
+            ]}
+            value={formValues.name}
+            onChangeText={text => setValue('name', text)}
+            placeholder='Назва гуртка'
+            placeholderTextColor={placeholderColor}
+          />
+          {errors.name && <ThemedText style={styles.errorText}>{errors.name.message}</ThemedText>}
+        </View>
+
+        <View style={[styles.field, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.label}>Викладач</ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: inputBackground,
+                color: themeColors.text,
+                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+              },
+            ]}
+            value={formValues.teacher_name}
+            onChangeText={text => setValue('teacher_name', text)}
+            placeholder='Ім’я викладача'
+            placeholderTextColor={placeholderColor}
+          />
+        </View>
+
+        <View style={[styles.field, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.label}>Місце</ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: inputBackground,
+                color: themeColors.text,
+                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+              },
+            ]}
+            value={formValues.location}
+            onChangeText={text => setValue('location', text)}
+            placeholder='Локація'
+            placeholderTextColor={placeholderColor}
+          />
+        </View>
+
+        <View style={[styles.field, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.label}>Вартість</ThemedText>
+          <TextInput
+            style={[
+              styles.input,
+              {
+                backgroundColor: inputBackground,
+                color: themeColors.text,
+                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+              },
+            ]}
+            value={String(formValues.price ?? '')}
+            onChangeText={text => {
+              const cleaned = text.replace(/[^0-9.,]/g, '').replace(',', '.');
+              setValue('price', cleaned === '' ? 0 : Number(cleaned));
+            }}
+            placeholder='0'
+            placeholderTextColor={placeholderColor}
+            keyboardType='numeric'
+          />
+          {errors.price && <ThemedText style={styles.errorText}>{errors.price.message}</ThemedText>}
+        </View>
+
+        <View style={[styles.field, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.label}>Наступна оплата</ThemedText>
+          <Pressable
+            style={[
+              styles.input,
+              styles.dateInput,
+              { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' },
+            ]}
+            onPress={() => setShowPaymentDatePicker(true)}
+          >
+            <ThemedText style={[styles.dateText, { color: themeColors.text }]}>
+              {formValues.next_payment_date ? formatDate(formValues.next_payment_date) : 'Додайте дату'}
+            </ThemedText>
+          </Pressable>
+          {formValues.next_payment_date ? (
             <Pressable
-              key={color}
+              onPress={() => setValue('next_payment_date', '')}
+              style={styles.clearButton}
+            >
+              <ThemedText style={styles.clearButtonText}>Очистити</ThemedText>
+            </Pressable>
+          ) : null}
+        </View>
+
+        <View style={[styles.section, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.sectionTitle}>Розклад</ThemedText>
+          <Pressable
+            style={styles.addSlotButton}
+            onPress={addScheduleSlot}
+          >
+            <ThemedText style={styles.addSlotText}>+ Додати слот</ThemedText>
+          </Pressable>
+          {errors.schedules && <ThemedText style={styles.errorText}>{errors.schedules.message}</ThemedText>}
+          {fields.length === 0 && !errors.schedules ? (
+            <ThemedText style={styles.emptyText}>Додайте принаймні один слот розкладу.</ThemedText>
+          ) : null}
+          {fields.map((field, index) => {
+            const slot = formValues.schedules?.[index] ?? { day_of_week: 1, start_time: '16:00', end_time: '17:00' };
+            return (
+              <View
+                key={field.id}
+                style={[styles.scheduleCard, { backgroundColor: surfaceColor }]}
+              >
+                <View style={styles.scheduleRow}>
+                  <ThemedText style={styles.label}>День</ThemedText>
+                  <View style={[styles.pickerWrapper, { borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}>
+                    <Picker
+                      selectedValue={slot.day_of_week}
+                      onValueChange={value => setValue(`schedules.${index}.day_of_week`, value)}
+                      dropdownIconColor={themeColors.tint}
+                      style={[styles.picker, { color: themeColors.text }]}
+                      itemStyle={{ color: themeColors.text }}
+                    >
+                      {dayOptions.map(option => (
+                        <Picker.Item
+                          key={option.value}
+                          label={option.label}
+                          value={option.value}
+                        />
+                      ))}
+                    </Picker>
+                  </View>
+                </View>
+
+                <View style={styles.timeRow}>
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={styles.label}>Початок</ThemedText>
+                    <Pressable
+                      style={[
+                        styles.input,
+                        styles.timeInput,
+                        {
+                          backgroundColor: inputBackground,
+                          borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+                        },
+                      ]}
+                      onPress={() => setActiveTimePicker({ index, field: 'start_time' })}
+                    >
+                      <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.start_time}</ThemedText>
+                    </Pressable>
+                  </View>
+                  <View style={styles.timeBlock}>
+                    <ThemedText style={styles.label}>Кінець</ThemedText>
+                    <Pressable
+                      style={[
+                        styles.input,
+                        styles.timeInput,
+                        {
+                          backgroundColor: inputBackground,
+                          borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+                        },
+                      ]}
+                      onPress={() => setActiveTimePicker({ index, field: 'end_time' })}
+                    >
+                      <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.end_time}</ThemedText>
+                    </Pressable>
+                  </View>
+                </View>
+
+                <Pressable
+                  style={styles.removeSlotButton}
+                  onPress={() => remove(index)}
+                >
+                  <ThemedText style={styles.removeSlotText}>Видалити слот</ThemedText>
+                </Pressable>
+              </View>
+            );
+          })}
+        </View>
+
+        <View style={[styles.section, { backgroundColor: surfaceColor }]}>
+          <ThemedText style={styles.sectionTitle}>Платіжні дані</ThemedText>
+          <View style={styles.fieldBlock}>
+            <ThemedText style={styles.label}>IBAN</ThemedText>
+            <TextInput
               style={[
-                styles.colorDot,
+                styles.input,
                 {
-                  backgroundColor: color,
-                  borderColor: color === currentColor ? (colorScheme === 'dark' ? '#fff' : '#111') : 'transparent',
+                  backgroundColor: inputBackground,
+                  color: themeColors.text,
+                  borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
                 },
               ]}
-              onPress={() => setValue('color_hex', color)}
+              value={formValues.payment_iban}
+              onChangeText={text => setValue('payment_iban', text)}
+              placeholder='IBAN'
+              placeholderTextColor={placeholderColor}
             />
-          ))}
+          </View>
+          <View style={styles.fieldBlock}>
+            <ThemedText style={styles.label}>Картка</ThemedText>
+            <TextInput
+              style={[
+                styles.input,
+                {
+                  backgroundColor: inputBackground,
+                  color: themeColors.text,
+                  borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+                },
+              ]}
+              value={formValues.payment_card}
+              onChangeText={text => setValue('payment_card', text)}
+              placeholder='Номер картки'
+              placeholderTextColor={placeholderColor}
+            />
+          </View>
         </View>
-      </View>
 
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.label}>Назва гуртка</ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: inputBackground,
-              color: themeColors.text,
-              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-            },
-          ]}
-          value={formValues.name}
-          onChangeText={text => setValue('name', text)}
-          placeholder='Назва гуртка'
-          placeholderTextColor={placeholderColor}
-        />
-        {errors.name && <ThemedText style={styles.errorText}>{errors.name.message}</ThemedText>}
-      </View>
-
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.label}>Викладач</ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: inputBackground,
-              color: themeColors.text,
-              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-            },
-          ]}
-          value={formValues.teacher_name}
-          onChangeText={text => setValue('teacher_name', text)}
-          placeholder='Ім’я викладача'
-          placeholderTextColor={placeholderColor}
-        />
-      </View>
-
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.label}>Місце</ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: inputBackground,
-              color: themeColors.text,
-              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-            },
-          ]}
-          value={formValues.location}
-          onChangeText={text => setValue('location', text)}
-          placeholder='Локація'
-          placeholderTextColor={placeholderColor}
-        />
-      </View>
-
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.label}>Вартість</ThemedText>
-        <TextInput
-          style={[
-            styles.input,
-            {
-              backgroundColor: inputBackground,
-              color: themeColors.text,
-              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-            },
-          ]}
-          value={String(formValues.price ?? '')}
-          onChangeText={text => {
-            const cleaned = text.replace(/[^0-9.,]/g, '').replace(',', '.');
-            setValue('price', cleaned === '' ? 0 : Number(cleaned));
-          }}
-          placeholder='0'
-          placeholderTextColor={placeholderColor}
-          keyboardType='numeric'
-        />
-        {errors.price && <ThemedText style={styles.errorText}>{errors.price.message}</ThemedText>}
-      </View>
-
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.label}>Наступна оплата</ThemedText>
         <Pressable
-          style={[
-            styles.input,
-            styles.dateInput,
-            { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' },
-          ]}
-          onPress={() => setShowPaymentDatePicker(true)}
+          style={[styles.button, isLoading && styles.buttonDisabled]}
+          onPress={handleSubmit(handleSave)}
+          disabled={isLoading}
         >
-          <ThemedText style={[styles.dateText, { color: themeColors.text }]}>
-            {formValues.next_payment_date ? formatDate(formValues.next_payment_date) : 'Додайте дату'}
-          </ThemedText>
+          <ThemedText style={styles.buttonText}>{submitLabel}</ThemedText>
         </Pressable>
-        {formValues.next_payment_date ? (
-          <Pressable
-            onPress={() => setValue('next_payment_date', '')}
-            style={styles.clearButton}
-          >
-            <ThemedText style={styles.clearButtonText}>Очистити</ThemedText>
-          </Pressable>
-        ) : null}
-      </View>
 
-      <View style={[styles.section, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.sectionTitle}>Розклад</ThemedText>
-        <Pressable
-          style={styles.addSlotButton}
-          onPress={addScheduleSlot}
-        >
-          <ThemedText style={styles.addSlotText}>+ Додати слот</ThemedText>
-        </Pressable>
-        {errors.schedules && <ThemedText style={styles.errorText}>{errors.schedules.message}</ThemedText>}
-        {fields.length === 0 && !errors.schedules ? (
-          <ThemedText style={styles.emptyText}>Додайте принаймні один слот розкладу.</ThemedText>
-        ) : null}
-        {fields.map((field, index) => {
-          const slot = formValues.schedules?.[index] ?? { day_of_week: 1, start_time: '16:00', end_time: '17:00' };
-          return (
-            <View
-              key={field.id}
-              style={[styles.scheduleCard, { backgroundColor: surfaceColor }]}
-            >
-              <View style={styles.scheduleRow}>
-                <ThemedText style={styles.label}>День</ThemedText>
-                <View style={[styles.pickerWrapper, { borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}>
-                  <Picker
-                    selectedValue={slot.day_of_week}
-                    onValueChange={value => setValue(`schedules.${index}.day_of_week`, value)}
-                    style={styles.picker}
-                  >
-                    {dayOptions.map(option => (
-                      <Picker.Item
-                        key={option.value}
-                        label={option.label}
-                        value={option.value}
-                      />
-                    ))}
-                  </Picker>
-                </View>
-              </View>
-
-              <View style={styles.timeRow}>
-                <View style={styles.timeBlock}>
-                  <ThemedText style={styles.label}>Початок</ThemedText>
-                  <Pressable
-                    style={[
-                      styles.input,
-                      styles.timeInput,
-                      { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' },
-                    ]}
-                    onPress={() => setActiveTimePicker({ index, field: 'start_time' })}
-                  >
-                    <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.start_time}</ThemedText>
-                  </Pressable>
-                </View>
-                <View style={styles.timeBlock}>
-                  <ThemedText style={styles.label}>Кінець</ThemedText>
-                  <Pressable
-                    style={[
-                      styles.input,
-                      styles.timeInput,
-                      { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' },
-                    ]}
-                    onPress={() => setActiveTimePicker({ index, field: 'end_time' })}
-                  >
-                    <ThemedText style={[styles.timeText, { color: themeColors.text }]}>{slot.end_time}</ThemedText>
-                  </Pressable>
-                </View>
-              </View>
-
-              <Pressable
-                style={styles.removeSlotButton}
-                onPress={() => remove(index)}
-              >
-                <ThemedText style={styles.removeSlotText}>Видалити слот</ThemedText>
-              </Pressable>
-            </View>
-          );
-        })}
-      </View>
-
-      <View style={[styles.section, { backgroundColor: surfaceColor }]}>
-        <ThemedText style={styles.sectionTitle}>Платіжні дані</ThemedText>
-        <View style={styles.fieldBlock}>
-          <ThemedText style={styles.label}>IBAN</ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: inputBackground,
-                color: themeColors.text,
-                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-              },
-            ]}
-            value={formValues.payment_iban}
-            onChangeText={text => setValue('payment_iban', text)}
-            placeholder='IBAN'
-            placeholderTextColor={placeholderColor}
+        {showPaymentDatePicker && (
+          <DateTimePicker
+            mode='date'
+            value={formValues.next_payment_date ? new Date(formValues.next_payment_date) : new Date()}
+            display={Platform.OS === 'ios' ? 'inline' : 'default'}
+            onChange={(_, selectedDate) => {
+              setShowPaymentDatePicker(false);
+              if (selectedDate) {
+                setValue('next_payment_date', selectedDate.toISOString());
+              }
+            }}
           />
-        </View>
-        <View style={styles.fieldBlock}>
-          <ThemedText style={styles.label}>Картка</ThemedText>
-          <TextInput
-            style={[
-              styles.input,
-              {
-                backgroundColor: inputBackground,
-                color: themeColors.text,
-                borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
-              },
-            ]}
-            value={formValues.payment_card}
-            onChangeText={text => setValue('payment_card', text)}
-            placeholder='Номер картки'
-            placeholderTextColor={placeholderColor}
+        )}
+        {activeTimePicker !== null && (
+          <DateTimePicker
+            mode='time'
+            value={parseTime(formValues.schedules?.[activeTimePicker.index]?.[activeTimePicker.field] ?? '16:00')}
+            display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+            onChange={handleTimeChange}
           />
-        </View>
-      </View>
-
-      <Pressable
-        style={[styles.button, isLoading && styles.buttonDisabled]}
-        onPress={handleSubmit(handleSave)}
-        disabled={isLoading}
-      >
-        <ThemedText style={styles.buttonText}>{submitLabel}</ThemedText>
-      </Pressable>
-
-      {showPaymentDatePicker && (
-        <DateTimePicker
-          mode='date'
-          value={formValues.next_payment_date ? new Date(formValues.next_payment_date) : new Date()}
-          display={Platform.OS === 'ios' ? 'inline' : 'default'}
-          onChange={(_, selectedDate) => {
-            setShowPaymentDatePicker(false);
-            if (selectedDate) {
-              setValue('next_payment_date', selectedDate.toISOString());
-            }
-          }}
-        />
-      )}
-      {activeTimePicker !== null && (
-        <DateTimePicker
-          mode='time'
-          value={parseTime(formValues.schedules?.[activeTimePicker.index]?.[activeTimePicker.field] ?? '16:00')}
-          display={Platform.OS === 'ios' ? 'spinner' : 'default'}
-          onChange={handleTimeChange}
-        />
-      )}
-    </ScrollView>
+        )}
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
+  keyboardAvoiding: {
+    flex: 1,
+  },
   container: {
+    flexGrow: 1,
     padding: 16,
     paddingBottom: 32,
   },
@@ -491,6 +509,9 @@ const styles = StyleSheet.create({
   },
   emojiText: {
     fontSize: 32,
+    lineHeight: 36,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   colorRow: {
     flexDirection: 'row',

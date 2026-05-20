@@ -224,7 +224,7 @@ export default function ChildProfileScreen() {
             />
           ))}
           {clubs?.length === 0 && (
-            <View style={styles.emptyClubs}>
+            <View style={[styles.emptyClubs, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <ThemedText style={styles.emptyClubsText}>Ще немає гуртків</ThemedText>
             </View>
           )}

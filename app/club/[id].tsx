@@ -1,14 +1,14 @@
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { ActivityIndicator, Alert, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { useClub, useDeleteClub, useMarkAsPaid } from '@/hooks/useClubs';
 import { ThemedText } from '@/components/themed-text';
-import { getPlural } from '@/lib/i18n';
 import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useClub, useDeleteClub, useMarkAsPaid } from '@/hooks/useClubs';
+import { getPlural } from '@/lib/i18n';
 
 const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 
@@ -227,7 +227,9 @@ export default function ClubDetailScreen() {
                 style={styles.scheduleRow}
               >
                 <View style={[styles.dayChip, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#e0f2fe' }]}>
-                  <ThemedText style={[styles.dayChipText, { color: colorScheme === 'dark' ? '#cbd5e1' : '#0369a1' }]}>{dayNames[slot.day_of_week - 1]}</ThemedText>
+                  <ThemedText style={[styles.dayChipText, { color: colorScheme === 'dark' ? '#cbd5e1' : '#0369a1' }]}>
+                    {dayNames[slot.day_of_week - 1]}
+                  </ThemedText>
                 </View>
                 <View style={styles.scheduleInfo}>
                   <ThemedText style={styles.scheduleTime}>
@@ -350,6 +352,9 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 40,
+    lineHeight: 40,
+    textAlign: 'center',
+    includeFontPadding: false,
     marginBottom: 10,
   },
   clubName: {

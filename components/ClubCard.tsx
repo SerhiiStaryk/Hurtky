@@ -109,15 +109,19 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   emojiContainer: {
-    width: 40,
-    height: 40,
-    borderRadius: 10,
+    width: 44,
+    height: 44,
+    borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
     marginRight: 10,
+    overflow: 'hidden',
   },
   emoji: {
-    fontSize: 20,
+    fontSize: 24,
+    lineHeight: 44,
+    textAlign: 'center',
+    includeFontPadding: false,
   },
   textContent: {
     flex: 1,
