@@ -1,25 +1,51 @@
-import { useState } from 'react';
-import { Alert, ActivityIndicator, ScrollView, StyleSheet, View, Pressable } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import Constants from 'expo-constants';
-import { useQueryClient } from '@tanstack/react-query';
-import { Ionicons } from '@expo/vector-icons';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
-import { useColorScheme } from '@/hooks/use-color-scheme';
+import { ThemeMode, setStoredThemeMode, useColorScheme } from '@/hooks/use-color-scheme';
 import { pickAndImportBackup, saveAndShareBackup } from '@/lib/share';
+import { useAppStore } from '@/store/useAppStore';
+import { useQueryClient } from '@tanstack/react-query';
+import Constants from 'expo-constants';
+import { useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+const themeOptions: Array<{ value: ThemeMode; label: string }> = [
+  { value: 'system', label: 'Система' },
+  { value: 'light', label: 'Світла' },
+  { value: 'dark', label: 'Темна' },
+];
 
 export default function SettingsScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const queryClient = useQueryClient();
 
+  const themeMode = useAppStore(state => state.themeMode);
+  const setThemeMode = useAppStore(state => state.setThemeMode);
+
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
+  const [isSavingTheme, setIsSavingTheme] = useState(false);
 
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+
+  const handleThemeModeChange = async (mode: ThemeMode) => {
+    if (mode === themeMode) {
+      return;
+    }
+
+    setIsSavingTheme(true);
+    try {
+      await setStoredThemeMode(mode);
+      setThemeMode(mode);
+    } catch (error: any) {
+      Alert.alert('Помилка', error?.message ?? 'Не вдалося зберегти тему');
+    } finally {
+      setIsSavingTheme(false);
+    }
+  };
 
   const handleExport = async () => {
     setIsExporting(true);
@@ -57,15 +83,17 @@ export default function SettingsScreen() {
   };
 
   return (
-    <ThemedView style={styles.container}> 
+    <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.content}>
           <ThemedText style={styles.sectionTitle}>Резервна копія</ThemedText>
 
-          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHeader}>
               <ThemedText style={styles.cardTitle}>Експорт даних</ThemedText>
-              <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>Зберегти всіх дітей та гуртки у файл</ThemedText>
+              <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>
+                Зберегти всіх дітей та гуртки у файл
+              </ThemedText>
             </View>
 
             {exportSuccess ? (
@@ -75,51 +103,80 @@ export default function SettingsScreen() {
             ) : null}
 
             <Pressable
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: colors.tint, opacity: pressed ? 0.8 : 1 },
-              ]}
+              style={({ pressed }) => [styles.button, { backgroundColor: colors.tint, opacity: pressed ? 0.8 : 1 }]}
               onPress={handleExport}
               disabled={isExporting}
             >
               {isExporting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color='#fff' />
               ) : (
                 <ThemedText style={styles.buttonText}>Поділитись файлом</ThemedText>
               )}
             </Pressable>
           </View>
 
-          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.cardHeader}>
               <ThemedText style={styles.cardTitle}>Імпорт даних</ThemedText>
-              <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>Відновити з резервної копії .json</ThemedText>
-            </View>
-
-            <View style={styles.warningBox}>
-              <ThemedText style={styles.warningText}>
-                Дані будуть ДОДАНІ до існуючих, не замінять їх
+              <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>
+                Відновити з резервної копії .json
               </ThemedText>
             </View>
 
+            <View style={styles.warningBox}>
+              <ThemedText style={styles.warningText}>Дані будуть ДОДАНІ до існуючих, не замінять їх</ThemedText>
+            </View>
+
             <Pressable
-              style={({ pressed }) => [
-                styles.button,
-                { backgroundColor: colors.tint, opacity: pressed ? 0.8 : 1 },
-              ]}
+              style={({ pressed }) => [styles.button, { backgroundColor: colors.tint, opacity: pressed ? 0.8 : 1 }]}
               onPress={handleImport}
               disabled={isImporting}
             >
               {isImporting ? (
-                <ActivityIndicator color="#fff" />
+                <ActivityIndicator color='#fff' />
               ) : (
                 <ThemedText style={styles.buttonText}>Обрати файл</ThemedText>
               )}
             </Pressable>
           </View>
 
+          <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Оформлення</ThemedText>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={styles.cardHeader}>
+              <ThemedText style={styles.cardTitle}>Тема</ThemedText>
+              <ThemedText style={[styles.cardSubtitle, { color: colors.icon }]}>
+                Виберіть оформлення інтерфейсу
+              </ThemedText>
+            </View>
+
+            <View style={styles.themeOptions}>
+              {themeOptions.map(option => {
+                const isActive = option.value === themeMode;
+                return (
+                  <Pressable
+                    key={option.value}
+                    onPress={() => handleThemeModeChange(option.value)}
+                    style={({ pressed }) => [
+                      styles.themeOption,
+                      {
+                        borderColor: isActive ? colors.tint : colors.border,
+                        backgroundColor: isActive ? colors.tint : 'transparent',
+                        opacity: pressed ? 0.8 : 1,
+                      },
+                    ]}
+                    disabled={isSavingTheme}
+                  >
+                    <ThemedText style={[styles.themeOptionText, { color: isActive ? '#fff' : colors.text }]}>
+                      {option.label}
+                    </ThemedText>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Про додаток</ThemedText>
-          <View style={[styles.card, { backgroundColor: colors.surface }]}> 
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
             <View style={styles.rowItem}>
               <ThemedText style={[styles.rowLabel, { color: colors.icon }]}>Версія</ThemedText>
               <ThemedText style={styles.rowValue}>{appVersion}</ThemedText>
@@ -211,6 +268,28 @@ const styles = StyleSheet.create({
     color: '#166534',
     fontWeight: '800',
     fontSize: 13,
+  },
+  themeOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 8,
+  },
+  themeOption: {
+    flex: 1,
+    maxWidth: 120,
+    minWidth: 90,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    alignItems: 'center',
+    marginRight: 8,
+    marginBottom: 10,
+  },
+  themeOptionText: {
+    fontSize: 14,
+    fontWeight: '700',
   },
   rowItem: {
     flexDirection: 'row',
