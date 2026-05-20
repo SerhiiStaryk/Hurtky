@@ -10,15 +10,7 @@ import { Child, Club, Schedule } from '@/lib/repositories';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Alert,
-  FlatList,
-  Platform,
-  Pressable,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface UpcomingLesson {
@@ -49,10 +41,7 @@ export default function HomeScreen() {
 
         // Get clubs count for each child
         for (const child of children) {
-          const clubs = await db.getAllAsync(
-            'SELECT * FROM clubs WHERE child_id = ?',
-            [child.id]
-          );
+          const clubs = await db.getAllAsync('SELECT * FROM clubs WHERE child_id = ?', [child.id]);
           clubsMap.set(child.id, clubs || []);
         }
 
@@ -66,27 +55,34 @@ export default function HomeScreen() {
         const tomorrowDay = todayDay === 7 ? 1 : todayDay + 1;
 
         // Get all schedules for today and tomorrow
-        const schedules = await db.getAllAsync<Schedule>(
-          'SELECT * FROM schedules WHERE day_of_week IN (?, ?)',
-          [todayDay, tomorrowDay]
+        const schedules = await db.getAllAsync<Schedule>('SELECT * FROM schedules WHERE day_of_week IN (?, ?)', [
+          todayDay,
+          tomorrowDay,
+        ]);
+
+        console.debug(
+          '[Home] schedules query returned',
+          schedules?.length ?? 0,
+          'rows for days',
+          todayDay,
+          tomorrowDay,
         );
+
+        if (!schedules || schedules.length === 0) {
+          // ensure counter resets if nothing found
+          setUpcomingLessons([]);
+        }
 
         if (schedules && schedules.length > 0) {
           const lessonsData: UpcomingLesson[] = [];
 
           for (const schedule of schedules) {
             // Get club info
-            const club = await db.getFirstAsync<Club>(
-              'SELECT * FROM clubs WHERE id = ?',
-              [schedule.club_id]
-            );
+            const club = await db.getFirstAsync<Club>('SELECT * FROM clubs WHERE id = ?', [schedule.club_id]);
 
             if (club) {
               // Get child info
-              const child = await db.getFirstAsync<Child>(
-                'SELECT * FROM children WHERE id = ?',
-                [club.child_id]
-              );
+              const child = await db.getFirstAsync<Child>('SELECT * FROM children WHERE id = ?', [club.child_id]);
 
               if (child) {
                 lessonsData.push({
@@ -96,10 +92,7 @@ export default function HomeScreen() {
                   clubEmoji: club.emoji,
                   startTime: schedule.start_time,
                   endTime: schedule.end_time,
-                  dayLabel:
-                    schedule.day_of_week === todayDay
-                      ? 'Сьогодні'
-                      : 'Завтра',
+                  dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
                   colorHex: club.color_hex,
                 });
               }
@@ -132,13 +125,12 @@ export default function HomeScreen() {
   const renderHeader = () => (
     <View style={[styles.header]}>
       <View style={styles.headerTop}>
-        <ThemedText style={styles.title}>Мої <ThemedText style={[styles.title, { color: colors.tint }]}>діти</ThemedText></ThemedText>
+        <ThemedText style={styles.title}>
+          Мої <ThemedText style={[styles.title, { color: colors.tint }]}>діти</ThemedText>
+        </ThemedText>
         <View style={{ flexDirection: 'row' }}>
           <Pressable
-            style={({ pressed }) => [
-              styles.iconBtn,
-              { opacity: pressed ? 0.7 : 1, marginRight: 8 },
-            ]}
+            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1, marginRight: 8 }]}
             onPress={() => {
               if (children.length >= 1) {
                 router.push('/club/new');
@@ -148,20 +140,17 @@ export default function HomeScreen() {
             }}
           >
             <Ionicons
-              name="school-outline"
+              name='school-outline'
               size={20}
               color={colors.tint}
             />
           </Pressable>
           <Pressable
-            style={({ pressed }) => [
-              styles.iconBtn,
-              { opacity: pressed ? 0.7 : 1 },
-            ]}
+            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
             onPress={handleAddChild}
           >
             <Ionicons
-              name="person-add-outline"
+              name='person-add-outline'
               size={20}
               color={colors.tint}
             />
@@ -170,7 +159,8 @@ export default function HomeScreen() {
       </View>
       {children.length > 0 && (
         <ThemedText style={styles.childCount}>
-          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')} · {upcomingLessons.length} {getPlural(upcomingLessons.length, 'заняття', 'заняття', 'занять')}
+          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')} · {upcomingLessons.length}{' '}
+          {getPlural(upcomingLessons.length, 'заняття', 'заняття', 'занять')}
         </ThemedText>
       )}
     </View>
@@ -179,14 +169,12 @@ export default function HomeScreen() {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons
-        name="person-add-outline"
+        name='person-add-outline'
         size={64}
         color={colors.icon}
         style={{ marginBottom: 16 }}
       />
-      <ThemedText style={styles.emptyStateText}>
-        Додайте першу дитину
-      </ThemedText>
+      <ThemedText style={styles.emptyStateText}>Додайте першу дитину</ThemedText>
       <Pressable
         style={({ pressed }) => [
           styles.emptyStateButton,
@@ -225,8 +213,15 @@ export default function HomeScreen() {
             {lesson.dayLabel} · {lesson.startTime}–{lesson.endTime}
           </ThemedText>
         </View>
-        <View style={[styles.dayBadge, { backgroundColor: lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50' }]}>
-          <ThemedText style={[styles.dayBadgeText, { color: lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80' }]}>
+        <View
+          style={[
+            styles.dayBadge,
+            { backgroundColor: lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50' },
+          ]}
+        >
+          <ThemedText
+            style={[styles.dayBadgeText, { color: lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80' }]}
+          >
             {lesson.dayLabel}
           </ThemedText>
         </View>
@@ -241,12 +236,8 @@ export default function HomeScreen() {
 
     return (
       <View style={[styles.sectionContainer, { backgroundColor: colors.background }]}>
-        <ThemedText style={styles.sectionTitle}>
-          Найближчі заняття
-        </ThemedText>
-        <View style={styles.lessonsContainer}>
-          {upcomingLessons.map(renderUpcomingLesson)}
-        </View>
+        <ThemedText style={styles.sectionTitle}>Найближчі заняття</ThemedText>
+        <View style={styles.lessonsContainer}>{upcomingLessons.map(renderUpcomingLesson)}</View>
       </View>
     );
   };
@@ -256,7 +247,7 @@ export default function HomeScreen() {
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.centerContainer}>
           <ActivityIndicator
-            size="large"
+            size='large'
             color={colors.tint}
           />
         </SafeAreaView>
@@ -280,7 +271,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <FlatList
           data={children}
-          keyExtractor={(item) => item.id.toString()}
+          keyExtractor={item => item.id.toString()}
           renderItem={({ item }) => {
             const clubs = childrenWithClubs.get(item.id) || [];
             const clubColor = clubs.length > 0 ? clubs[0].color_hex : '#0a7ea4';
@@ -293,6 +284,7 @@ export default function HomeScreen() {
             );
           }}
           ListHeaderComponent={renderHeader}
+          extraData={upcomingLessons}
           ListFooterComponent={
             <View style={styles.footerContainer}>
               {renderUpcomingSection()}
