@@ -1,12 +1,13 @@
+import { ThemedText } from '@/components/themed-text';
+import { Colors } from '@/constants/theme';
+import { useColorScheme } from '@/hooks/use-color-scheme';
+import { zodResolver } from '@hookform/resolvers/zod';
+import DateTimePicker from '@react-native-community/datetimepicker';
+import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { Image, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import DateTimePicker from '@react-native-community/datetimepicker';
-import * as ImagePicker from 'expo-image-picker';
 import { z } from 'zod';
-import { Colors } from '@/constants/theme';
-import { ThemedText } from '@/components/themed-text';
-import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export const childSchema = z.object({
   name: z.string().min(1, 'Ім’я обов’язкове'),
@@ -58,7 +59,14 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
   const surfaceColor = colorScheme === 'dark' ? '#1f2937' : '#fff';
   const inputBackground = colorScheme === 'dark' ? '#111827' : '#f9fafb';
   const placeholderColor = colorScheme === 'dark' ? '#9ca3af' : '#6b7280';
-  const { setValue, handleSubmit, watch, reset, formState: { errors } } = useForm<ChildFormValues>({
+  const {
+    setValue,
+    handleSubmit,
+    watch,
+    reset,
+    formState: { errors },
+  } = useForm<ChildFormValues>({
+    resolver: zodResolver(childSchema),
     defaultValues: { ...initialValues, ...defaultValues },
   });
   const [showDatePicker, setShowDatePicker] = useState(false);
@@ -90,21 +98,24 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
   };
 
   const handleSave = (values: ChildFormValues) => {
-    const parsed = childSchema.safeParse(values);
-    if (!parsed.success) {
-      console.error('Validation failed:', parsed.error.format());
-      return;
-    }
-
-    onSubmit(parsed.data);
+    onSubmit(values);
   };
 
   return (
-    <ScrollView contentContainerStyle={[styles.container, { backgroundColor: themeColors.background }]} keyboardShouldPersistTaps='handled'>
+    <ScrollView
+      contentContainerStyle={[styles.container, { backgroundColor: themeColors.background }]}
+      keyboardShouldPersistTaps='handled'
+    >
       <View style={[styles.card, { backgroundColor: surfaceColor }]}>
-        <Pressable style={styles.avatarPicker} onPress={handleImagePicker}>
+        <Pressable
+          style={styles.avatarPicker}
+          onPress={handleImagePicker}
+        >
           {currentValues.photo_uri ? (
-            <Image source={{ uri: currentValues.photo_uri }} style={styles.avatarImage} />
+            <Image
+              source={{ uri: currentValues.photo_uri }}
+              style={styles.avatarImage}
+            />
           ) : (
             <View style={[styles.avatarPlaceholder, { backgroundColor: inputBackground }]}>
               <ThemedText style={styles.avatarEmoji}>{getAvatarLabel(currentValues.name)}</ThemedText>
@@ -114,10 +125,17 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
         <ThemedText style={styles.avatarLabel}>Натисніть, щоб вибрати фото</ThemedText>
       </View>
 
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
+      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Ім’я</ThemedText>
         <TextInput
-          style={[styles.input, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
+          style={[
+            styles.input,
+            {
+              backgroundColor: inputBackground,
+              color: themeColors.text,
+              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+            },
+          ]}
           value={currentValues.name}
           onChangeText={text => setValue('name', text)}
           placeholder='Ім’я дитини'
@@ -126,18 +144,35 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
         {errors.name && <ThemedText style={styles.errorText}>{errors.name.message}</ThemedText>}
       </View>
 
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
+      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Дата народження</ThemedText>
-        <Pressable style={[styles.input, styles.dateInput, { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]} onPress={() => setShowDatePicker(true)}>
-          <ThemedText style={[styles.dateText, { color: themeColors.text }]}>{formatDate(currentValues.birth_date)}</ThemedText>
+        <Pressable
+          style={[
+            styles.input,
+            styles.dateInput,
+            { backgroundColor: inputBackground, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' },
+          ]}
+          onPress={() => setShowDatePicker(true)}
+        >
+          <ThemedText style={[styles.dateText, { color: themeColors.text }]}>
+            {formatDate(currentValues.birth_date)}
+          </ThemedText>
         </Pressable>
         {errors.birth_date && <ThemedText style={styles.errorText}>{errors.birth_date.message}</ThemedText>}
       </View>
 
-      <View style={[styles.field, { backgroundColor: surfaceColor }]}> 
+      <View style={[styles.field, { backgroundColor: surfaceColor }]}>
         <ThemedText style={styles.label}>Нотатки</ThemedText>
         <TextInput
-          style={[styles.input, styles.textArea, { backgroundColor: inputBackground, color: themeColors.text, borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}
+          style={[
+            styles.input,
+            styles.textArea,
+            {
+              backgroundColor: inputBackground,
+              color: themeColors.text,
+              borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+            },
+          ]}
           value={currentValues.notes}
           onChangeText={text => setValue('notes', text)}
           placeholder='Додаткові нотатки'

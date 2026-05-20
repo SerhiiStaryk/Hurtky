@@ -1,25 +1,19 @@
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import {
-  Alert,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
-import { LinearGradient } from 'expo-linear-gradient';
-import { Ionicons } from '@expo/vector-icons';
-import { useChild, useDeleteChild } from '@/hooks/useChildren';
-import { useClubsByChild } from '@/hooks/useClubs';
-import { ThemedText } from '@/components/themed-text';
-import { getPlural } from '@/lib/i18n';
 import { ClubCard } from '@/components/ClubCard';
+import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { useChild, useDeleteChild } from '@/hooks/useChildren';
+import { useClubsByChild } from '@/hooks/useClubs';
+import { getPlural } from '@/lib/i18n';
+import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLayoutEffect } from 'react';
+import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
 export default function ChildProfileScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
@@ -30,10 +24,17 @@ export default function ChildProfileScreen() {
   const { data: clubs, isLoading: clubsLoading } = useClubsByChild(childId);
   const deleteChildMutation = useDeleteChild();
 
+  useLayoutEffect(() => {
+    navigation.setOptions({
+      title: child?.name ?? 'Дитина',
+      headerBackTitle: 'Назад',
+    });
+  }, [navigation, child]);
+
   if (!id || childId <= 0) {
     return (
       <View style={styles.container}>
-        <ThemedText style={styles.error}>ID дитини обов'язковий.</ThemedText>
+        <ThemedText style={styles.error}>ID дитини обов&apos;язковий.</ThemedText>
       </View>
     );
   }
@@ -41,7 +42,10 @@ export default function ChildProfileScreen() {
   if (childLoading || clubsLoading) {
     return (
       <View style={styles.container}>
-        <ActivityIndicator size="large" color={colors.tint} />
+        <ActivityIndicator
+          size='large'
+          color={colors.tint}
+        />
       </View>
     );
   }
@@ -60,10 +64,7 @@ export default function ChildProfileScreen() {
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
 
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
 
@@ -73,7 +74,7 @@ export default function ChildProfileScreen() {
   const getInitials = (name: string): string => {
     return name
       .split(' ')
-      .map((part) => part[0])
+      .map(part => part[0])
       .join('')
       .toUpperCase()
       .slice(0, 2);
@@ -84,32 +85,29 @@ export default function ChildProfileScreen() {
   const clubCount = clubs?.length || 0;
   const totalPrice = clubs?.reduce((sum, club) => sum + club.price, 0) || 0;
 
-  const warningClubs = clubs?.filter((club) => {
-    if (!club.next_payment_date) return false;
-    const paymentDate = new Date(club.next_payment_date);
-    const now = new Date();
-    const diffTime = paymentDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays <= 7 && diffDays >= 0;
-  }) || [];
+  const warningClubs =
+    clubs?.filter(club => {
+      if (!club.next_payment_date) return false;
+      const paymentDate = new Date(club.next_payment_date);
+      const now = new Date();
+      const diffTime = paymentDate.getTime() - now.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      return diffDays <= 7 && diffDays >= 0;
+    }) || [];
 
   const handleDelete = () => {
-    Alert.alert(
-      'Видалити дитину?',
-      'Цю дію неможливо скасувати.',
-      [
-        { text: 'Скасувати', style: 'cancel' },
-        {
-          text: 'Видалити',
-          style: 'destructive',
-          onPress: () => {
-            deleteChildMutation.mutate(childId, {
-              onSuccess: () => router.back(),
-            });
-          },
+    Alert.alert('Видалити дитину?', 'Цю дію неможливо скасувати.', [
+      { text: 'Скасувати', style: 'cancel' },
+      {
+        text: 'Видалити',
+        style: 'destructive',
+        onPress: () => {
+          deleteChildMutation.mutate(childId, {
+            onSuccess: () => router.back(),
+          });
         },
-      ]
-    );
+      },
+    ]);
   };
 
   return (
@@ -126,7 +124,11 @@ export default function ChildProfileScreen() {
             style={styles.backButton}
           >
             <View style={styles.backButtonContent}>
-              <Ionicons name="chevron-back" size={16} color="white" />
+              <Ionicons
+                name='chevron-back'
+                size={16}
+                color='white'
+              />
               <ThemedText style={styles.backButtonText}>Назад</ThemedText>
             </View>
           </Pressable>
@@ -136,13 +138,21 @@ export default function ChildProfileScreen() {
               onPress={() => router.push({ pathname: '/child/[id]/edit', params: { id } })}
               style={styles.headerIcon}
             >
-              <Ionicons name="pencil" size={20} color="white" />
+              <Ionicons
+                name='pencil'
+                size={20}
+                color='white'
+              />
             </Pressable>
             <Pressable
               onPress={handleDelete}
               style={styles.headerIcon}
             >
-              <Ionicons name="trash" size={20} color="white" />
+              <Ionicons
+                name='trash'
+                size={20}
+                color='white'
+              />
             </Pressable>
           </View>
         </View>
@@ -155,22 +165,16 @@ export default function ChildProfileScreen() {
                 style={styles.avatar}
               />
             ) : (
-              <View
-                style={[
-                  styles.avatar,
-                  styles.avatarPlaceholder,
-                  { backgroundColor: 'rgba(255, 255, 255, 0.2)' },
-                ]}
-              >
-                <ThemedText style={styles.initials}>
-                  {initials}
-                </ThemedText>
+              <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: 'rgba(255, 255, 255, 0.2)' }]}>
+                <ThemedText style={styles.initials}>{initials}</ThemedText>
               </View>
             )}
           </View>
           <View style={styles.nameContainer}>
             <ThemedText style={styles.childName}>{child.name}</ThemedText>
-            <ThemedText style={styles.childAge}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
+            <ThemedText style={styles.childAge}>
+              {age} {getPlural(age, 'рік', 'роки', 'років')}
+            </ThemedText>
           </View>
         </View>
 
@@ -181,23 +185,29 @@ export default function ChildProfileScreen() {
             </ThemedText>
           </View>
           <View style={styles.chip}>
-            <ThemedText style={styles.chipText}>
-              {totalPrice} ₴/міс
-            </ThemedText>
+            <ThemedText style={styles.chipText}>{totalPrice} ₴/міс</ThemedText>
           </View>
         </View>
       </LinearGradient>
 
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scrollContent}>
-        {warningClubs.map((club) => (
-          <View key={club.id} style={styles.warningBanner}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+      >
+        {warningClubs.map(club => (
+          <View
+            key={club.id}
+            style={styles.warningBanner}
+          >
             <View style={[styles.warningIconContainer, { backgroundColor: '#FEF3C7' }]}>
-              <Ionicons name="warning" size={18} color="#D97706" />
+              <Ionicons
+                name='warning'
+                size={18}
+                color='#D97706'
+              />
             </View>
             <View style={styles.warningText}>
-              <ThemedText style={styles.warningTitle}>
-                Оплата за {club.name}
-              </ThemedText>
+              <ThemedText style={styles.warningTitle}>Оплата за {club.name}</ThemedText>
               <ThemedText style={styles.warningDetails}>
                 До {new Date(club.next_payment_date!).toLocaleDateString('uk-UA')} · {club.price} ₴
               </ThemedText>
@@ -207,8 +217,11 @@ export default function ChildProfileScreen() {
 
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Гуртки</ThemedText>
-          {clubs?.map((club) => (
-            <ClubCard key={club.id} club={club} />
+          {clubs?.map(club => (
+            <ClubCard
+              key={club.id}
+              club={club}
+            />
           ))}
           {clubs?.length === 0 && (
             <View style={styles.emptyClubs}>
@@ -222,7 +235,11 @@ export default function ChildProfileScreen() {
         style={[styles.fab, { backgroundColor: colors.tint }]}
         onPress={() => router.push(`/club/new?childId=${id}`)}
       >
-        <Ionicons name="add" size={28} color="white" />
+        <Ionicons
+          name='add'
+          size={28}
+          color='white'
+        />
       </Pressable>
     </View>
   );

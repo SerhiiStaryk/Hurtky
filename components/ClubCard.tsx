@@ -1,10 +1,11 @@
-import React from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
-import { useRouter } from 'expo-router';
-import { ThemedText } from './themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { ClubWithSchedules } from '@/lib/repositories';
+import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
+import React from 'react';
+import { Pressable, StyleSheet, View } from 'react-native';
+import { ThemedText } from './themed-text';
 
 interface ClubCardProps {
   club: ClubWithSchedules;
@@ -51,16 +52,26 @@ export function ClubCard({ club }: ClubCardProps) {
             <ThemedText style={styles.emoji}>{club.emoji}</ThemedText>
           </View>
           <View style={styles.textContent}>
-            <ThemedText style={styles.name} numberOfLines={1}>
+            <ThemedText
+              style={styles.name}
+              numberOfLines={1}
+            >
               {club.name}
             </ThemedText>
-            <ThemedText style={styles.schedule} numberOfLines={1}>
+            <ThemedText
+              style={styles.schedule}
+              numberOfLines={1}
+            >
               {getScheduleSummary(club.schedules)}
             </ThemedText>
           </View>
         </View>
         <View style={styles.chevronContainer}>
-          <Ionicons name="chevron-forward" size={16} color={colors.icon + '80'} />
+          <Ionicons
+            name='chevron-forward'
+            size={16}
+            color={colors.icon + '80'}
+          />
         </View>
       </View>
     </Pressable>
