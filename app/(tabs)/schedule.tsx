@@ -5,10 +5,11 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs } from '@/hooks/useClubs';
 import { Ionicons } from '@expo/vector-icons';
+import { useFocusEffect } from '@react-navigation/native';
 import { addDays, addWeeks, endOfWeek, format, getISODay, isSameDay, startOfWeek } from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -152,6 +153,82 @@ export default function ScheduleScreen() {
     return h * 60 + m;
   };
 
+  const computeLayouts = (items: { startTime: string; endTime: string }[]) => {
+    // Returns array of { col, totalCols } for each item (same order)
+    if (!items || items.length === 0) return [];
+
+    type Event = { index: number; start: number; end: number };
+
+    const events: Event[] = items
+      .map((it, i) => ({
+        index: i,
+        start: getTimeMinutes(it.startTime),
+        end: getTimeMinutes(it.endTime),
+      }))
+      .sort((a, b) => a.start - b.start || a.end - b.end);
+
+    const assignments: { col: number; totalCols: number }[] = Array(items.length).fill({ col: 0, totalCols: 1 });
+
+    // Build overlapping clusters
+    let cluster: Event[] = [];
+    let clusterEnd = -Infinity;
+
+    const flushCluster = (clusterEvents: Event[]) => {
+      if (clusterEvents.length === 0) return;
+
+      // Greedy column assignment within cluster
+      const colsEnd: number[] = [];
+
+      for (const ev of clusterEvents) {
+        let placed = false;
+        for (let c = 0; c < colsEnd.length; c += 1) {
+          if (colsEnd[c] <= ev.start) {
+            // place in this column
+            assignments[ev.index] = { col: c, totalCols: 0 };
+            colsEnd[c] = ev.end;
+            placed = true;
+            break;
+          }
+        }
+        if (!placed) {
+          // new column
+          colsEnd.push(ev.end);
+          assignments[ev.index] = { col: colsEnd.length - 1, totalCols: 0 };
+        }
+      }
+
+      const total = colsEnd.length || 1;
+      for (const ev of clusterEvents) {
+        assignments[ev.index].totalCols = total;
+      }
+    };
+
+    for (const ev of events) {
+      if (cluster.length === 0) {
+        cluster.push(ev);
+        clusterEnd = ev.end;
+        continue;
+      }
+
+      if (ev.start < clusterEnd) {
+        // overlaps cluster
+        cluster.push(ev);
+        clusterEnd = Math.max(clusterEnd, ev.end);
+      } else {
+        // flush previous cluster
+        flushCluster(cluster);
+        // start new cluster
+        cluster = [ev];
+        clusterEnd = ev.end;
+      }
+    }
+
+    // flush last
+    flushCluster(cluster);
+
+    return assignments;
+  };
+
   const getBlockStyle = (startTime: string, endTime: string) => {
     const startMins = getTimeMinutes(startTime);
     const endMins = getTimeMinutes(endTime);
@@ -167,26 +244,34 @@ export default function ScheduleScreen() {
     };
   };
 
+  const scrollToToday = useCallback((animated = false) => {
+    const now = new Date();
+    const dayIndex = getISODay(now) - 1;
+    horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
+  }, []);
+
   const goToToday = () => {
     const now = new Date();
     setWeekStart(startOfWeek(now, { weekStartsOn: 1 }));
 
     // Use a small timeout to ensure state update/render happens if week changed
     setTimeout(() => {
-      const dayIndex = getISODay(now) - 1;
-      horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated: true });
+      scrollToToday(true);
     }, 50);
   };
 
-  // Initial scroll to today
-  useEffect(() => {
-    if (!isLoading) {
-      setTimeout(() => {
-        const dayIndex = getISODay(new Date()) - 1;
-        horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated: false });
+  useFocusEffect(
+    useCallback(() => {
+      const now = new Date();
+      setWeekStart(startOfWeek(now, { weekStartsOn: 1 }));
+
+      const timer = setTimeout(() => {
+        scrollToToday(false);
       }, 100);
-    }
-  }, [isLoading]);
+
+      return () => clearTimeout(timer);
+    }, [scrollToToday]),
+  );
 
   const renderGridView = () => (
     <ScrollView
@@ -253,51 +338,56 @@ export default function ScheduleScreen() {
                       />
                     ))}
 
-                    {items.map(item => {
-                      const blockStyle = getBlockStyle(item.startTime, item.endTime);
-                      const blockTextColor = getContrastingTextColor(item.colorHex);
+                    {(() => {
+                      const layouts = computeLayouts(items);
+                      return items.map((item, idx) => {
+                        const layout = layouts[idx] ?? { col: 0, totalCols: 1 };
+                        const leftPercent = layout.col * (100 / layout.totalCols);
+                        const widthPercent = 100 / layout.totalCols;
+                        const blockStyle = getBlockStyle(item.startTime, item.endTime);
+                        const blockTextColor = getContrastingTextColor(item.colorHex);
 
-                      return (
-                        <Pressable
-                          key={`${item.clubId}-${item.startTime}-${item.endTime}`}
-                          style={({ pressed }) => [
-                            styles.scheduleBlock,
-                            {
-                              backgroundColor: hexToRgba(item.colorHex, 0.9),
-                              opacity: pressed ? 0.9 : 1,
-                              top: blockStyle.top,
-                              height: blockStyle.height,
-                            },
-                          ]}
-                          onPress={() =>
-                            router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })
-                          }
-                        >
-                          <View style={styles.blockTitleRow}>
-                            <ThemedText style={[styles.blockEmoji, { color: blockTextColor }]}>
-                              {item.clubEmoji}
-                            </ThemedText>
-                            <ThemedText
-                              style={[styles.blockTitle, { color: blockTextColor }]}
-                              numberOfLines={1}
-                            >
-                              {item.clubName}
-                            </ThemedText>
-                          </View>
-                          <View>
-                            <ThemedText style={[styles.blockTime, { color: blockTextColor }]}>
-                              {item.startTime} - {item.endTime}
-                            </ThemedText>
-                            <ThemedText
-                              style={[styles.blockChild, { color: blockTextColor }]}
-                              numberOfLines={1}
-                            >
-                              {childMap.get(item.childId) ?? 'Дитина'}
-                            </ThemedText>
-                          </View>
-                        </Pressable>
-                      );
-                    })}
+                        return (
+                          <Pressable
+                            key={`${item.clubId}-${item.startTime}-${item.endTime}`}
+                            style={({ pressed }) => [
+                              styles.scheduleBlock,
+                              {
+                                backgroundColor: hexToRgba(item.colorHex, 0.9),
+                                opacity: pressed ? 0.9 : 1,
+                                top: blockStyle.top,
+                                height: blockStyle.height,
+                                left: `${leftPercent}%`,
+                                width: `${widthPercent}%`,
+                              },
+                            ]}
+                            onPress={() =>
+                              router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })
+                            }
+                          >
+                            <View style={styles.blockTitleRow}>
+                              <ThemedText style={[styles.blockEmoji, { color: blockTextColor }]}>
+                                {item.clubEmoji}
+                              </ThemedText>
+                              <ThemedText
+                                style={[styles.blockTitle, { color: blockTextColor }]}
+                                numberOfLines={1}
+                              >
+                                {item.clubName}
+                              </ThemedText>
+                            </View>
+                            <View>
+                              <ThemedText
+                                style={[styles.blockChild, { color: blockTextColor }]}
+                                numberOfLines={1}
+                              >
+                                {childMap.get(item.childId) ?? 'Дитина'}
+                              </ThemedText>
+                            </View>
+                          </Pressable>
+                        );
+                      });
+                    })()}
                   </View>
                 </View>
               );
@@ -701,7 +791,7 @@ const styles = StyleSheet.create({
   scheduleBlock: {
     position: 'absolute',
     left: 0,
-    right: 0,
+    width: '100%',
     borderRadius: 8,
     padding: 10,
     justifyContent: 'space-between',

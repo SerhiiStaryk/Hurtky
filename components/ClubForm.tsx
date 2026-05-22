@@ -482,7 +482,7 @@ const styles = StyleSheet.create({
   container: {
     flexGrow: 1,
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 100,
   },
   section: {
     borderRadius: 18,
