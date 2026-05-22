@@ -4,9 +4,8 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildren } from '@/hooks/useChildren';
-import { getDatabase } from '@/lib/db';
 import { getPlural } from '@/lib/i18n';
-import { Child, Club, Schedule } from '@/lib/repositories';
+import { getClubsByChildIds, getUpcomingLessonsForDays } from '@/lib/repositories';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
@@ -36,78 +35,34 @@ export default function HomeScreen() {
   useEffect(() => {
     const loadChildrenData = async () => {
       try {
-        const db = await getDatabase();
-        const clubsMap = new Map<number, any>();
-
-        // Get clubs count for each child
-        for (const child of children) {
-          const clubs = await db.getAllAsync('SELECT * FROM clubs WHERE child_id = ?', [child.id]);
-          clubsMap.set(child.id, clubs || []);
-        }
-
+        const childIds = children.map(child => child.id);
+        const clubsMap = await getClubsByChildIds(childIds);
         setChildrenWithClubs(clubsMap);
 
-        // Get upcoming lessons for today and tomorrow
         const today = new Date();
-        const todayDayOfWeek = today.getDay(); // 0=Sunday, 1=Monday, ..., 6=Saturday
-        // Convert to 1=Monday, 7=Sunday format
+        const todayDayOfWeek = today.getDay();
         const todayDay = todayDayOfWeek === 0 ? 7 : todayDayOfWeek;
         const tomorrowDay = todayDay === 7 ? 1 : todayDay + 1;
 
-        // Get all schedules for today and tomorrow
-        const schedules = await db.getAllAsync<Schedule>('SELECT * FROM schedules WHERE day_of_week IN (?, ?)', [
-          todayDay,
-          tomorrowDay,
-        ]);
+        const scheduleRows = await getUpcomingLessonsForDays([todayDay, tomorrowDay]);
 
-        console.debug(
-          '[Home] schedules query returned',
-          schedules?.length ?? 0,
-          'rows for days',
-          todayDay,
-          tomorrowDay,
-        );
-
-        if (!schedules || schedules.length === 0) {
-          // ensure counter resets if nothing found
+        if (!scheduleRows || scheduleRows.length === 0) {
           setUpcomingLessons([]);
+          return;
         }
 
-        if (schedules && schedules.length > 0) {
-          const lessonsData: UpcomingLesson[] = [];
+        const lessonsData: UpcomingLesson[] = scheduleRows.slice(0, 3).map(schedule => ({
+          id: `${schedule.id}`,
+          childName: schedule.child_name,
+          clubName: schedule.club_name,
+          clubEmoji: schedule.club_emoji,
+          startTime: schedule.start_time,
+          endTime: schedule.end_time,
+          dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
+          colorHex: schedule.color_hex,
+        }));
 
-          for (const schedule of schedules) {
-            // Get club info
-            const club = await db.getFirstAsync<Club>('SELECT * FROM clubs WHERE id = ?', [schedule.club_id]);
-
-            if (club) {
-              // Get child info
-              const child = await db.getFirstAsync<Child>('SELECT * FROM children WHERE id = ?', [club.child_id]);
-
-              if (child) {
-                lessonsData.push({
-                  id: `${schedule.id}`,
-                  childName: child.name,
-                  clubName: club.name,
-                  clubEmoji: club.emoji,
-                  startTime: schedule.start_time,
-                  endTime: schedule.end_time,
-                  dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
-                  colorHex: club.color_hex,
-                });
-              }
-            }
-          }
-
-          // Sort by time and limit to 3
-          lessonsData.sort((a, b) => {
-            const timeA = parseInt(a.startTime.replace(':', ''), 10);
-            const timeB = parseInt(b.startTime.replace(':', ''), 10);
-            return timeA - timeB;
-          });
-
-          setUpcomingLessons(lessonsData.slice(0, 3));
-        }
+        setUpcomingLessons(lessonsData);
       } catch (err) {
         console.error('Error loading children data:', err);
       }
@@ -302,7 +257,6 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    marginTop: 40,
   },
   safeArea: {
     flex: 1,

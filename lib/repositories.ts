@@ -1,5 +1,4 @@
 import { getDatabase, runInTransaction } from './db';
-import * as SQLite from 'expo-sqlite';
 
 // Type Definitions
 export interface Child {
@@ -117,8 +116,11 @@ export async function updateChild(id: number, data: UpdateChildInput): Promise<v
 }
 
 export async function deleteChild(id: number): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('DELETE FROM children WHERE id = ?', [id]);
+  await runInTransaction(async db => {
+    await db.runAsync('DELETE FROM schedules WHERE club_id IN (SELECT id FROM clubs WHERE child_id = ?)', [id]);
+    await db.runAsync('DELETE FROM clubs WHERE child_id = ?', [id]);
+    await db.runAsync('DELETE FROM children WHERE id = ?', [id]);
+  });
 }
 
 // Clubs Repository Functions
@@ -143,6 +145,75 @@ export async function getClubsByChildId(childId: number): Promise<ClubWithSchedu
   }
 
   return clubsWithSchedules;
+}
+
+export async function getClubsByChildIds(childIds: number[]): Promise<Map<number, Club[]>> {
+  const db = await getDatabase();
+  const uniqueIds = Array.from(new Set(childIds));
+
+  if (uniqueIds.length === 0) {
+    return new Map();
+  }
+
+  const placeholders = uniqueIds.map(() => '?').join(', ');
+  const clubs = await db.getAllAsync<Club>(
+    `SELECT * FROM clubs WHERE child_id IN (${placeholders}) ORDER BY child_id ASC, name ASC`,
+    uniqueIds,
+  );
+
+  const map = new Map<number, Club[]>();
+  if (!clubs || clubs.length === 0) {
+    return map;
+  }
+
+  for (const club of clubs) {
+    const childClubs = map.get(club.child_id) ?? [];
+    childClubs.push(club);
+    map.set(club.child_id, childClubs);
+  }
+
+  return map;
+}
+
+export interface UpcomingScheduleRow {
+  id: number;
+  start_time: string;
+  end_time: string;
+  day_of_week: number;
+  club_name: string;
+  club_emoji: string;
+  color_hex: string;
+  child_name: string;
+}
+
+export async function getUpcomingLessonsForDays(days: number[]): Promise<UpcomingScheduleRow[]> {
+  const db = await getDatabase();
+  const uniqueDays = Array.from(new Set(days));
+
+  if (uniqueDays.length === 0) {
+    return [];
+  }
+
+  const placeholders = uniqueDays.map(() => '?').join(', ');
+  const rows = await db.getAllAsync<UpcomingScheduleRow>(
+    `SELECT
+       s.id,
+       s.start_time,
+       s.end_time,
+       s.day_of_week,
+       c.name AS club_name,
+       c.emoji AS club_emoji,
+       c.color_hex,
+       ch.name AS child_name
+     FROM schedules s
+     JOIN clubs c ON c.id = s.club_id
+     JOIN children ch ON ch.id = c.child_id
+     WHERE s.day_of_week IN (${placeholders})
+     ORDER BY s.day_of_week ASC, s.start_time ASC`,
+    uniqueDays,
+  );
+
+  return rows || [];
 }
 
 export async function getClubById(id: number): Promise<ClubWithSchedules | null> {

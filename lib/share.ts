@@ -1,6 +1,6 @@
 import { format } from 'date-fns';
 import * as DocumentPicker from 'expo-document-picker';
-import { File, Paths } from 'expo-file-system/next';
+import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 import { exportBackup, importBackup } from './backup';
@@ -35,18 +35,54 @@ export async function saveAndShareBackup(): Promise<void> {
     throw new Error('Функція "Поділитись" недоступна на цьому пристрої');
   }
 
-  const dir = Paths.cache ?? Paths.document;
+  const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
   if (!dir) {
     throw new Error('Файлова система недоступна на цьому пристрої');
   }
 
-  const file = new File(dir, filename);
-  await file.write(json);
+  const fileUri = `${dir}${filename}`;
+  await FileSystem.writeAsStringAsync(fileUri, json, { encoding: FileSystem.EncodingType.UTF8 });
 
-  await Sharing.shareAsync(file.uri, {
+  await Sharing.shareAsync(fileUri, {
     mimeType: 'application/json',
     dialogTitle: 'Зберегти резервну копію',
     UTI: 'public.json',
+  });
+}
+
+export async function saveTextFile(content: string, filename: string, dialogTitle = 'Зберегти файл'): Promise<void> {
+  if (Platform.OS === 'web') {
+    if (typeof document !== 'undefined') {
+      const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    }
+    return;
+  }
+
+  const isSharingAvailable = await Sharing.isAvailableAsync();
+  if (!isSharingAvailable) {
+    throw new Error('Функція "Поділитись" недоступна на цьому пристрої');
+  }
+
+  const dir = FileSystem.cacheDirectory ?? FileSystem.documentDirectory;
+  if (!dir) {
+    throw new Error('Файлова система недоступна на цьому пристрої');
+  }
+
+  const fileUri = `${dir}${filename}`;
+  await FileSystem.writeAsStringAsync(fileUri, content, { encoding: FileSystem.EncodingType.UTF8 });
+
+  await Sharing.shareAsync(fileUri, {
+    mimeType: 'text/plain',
+    dialogTitle,
+    UTI: 'public.plain-text',
   });
 }
 
@@ -76,8 +112,7 @@ export async function pickAndImportBackup(): Promise<ImportResult> {
     return { imported: 0, errors: ['Не вдалося прочитати файл резервної копії'] };
   }
 
-  const file = new File(uri);
-  const json = await file.text();
+  const json = await FileSystem.readAsStringAsync(uri, { encoding: FileSystem.EncodingType.UTF8 });
 
   return await importBackup(json);
 }

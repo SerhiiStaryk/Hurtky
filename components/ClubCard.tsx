@@ -20,7 +20,7 @@ export function ClubCard({ club }: ClubCardProps) {
     if (!schedules || schedules.length === 0) return 'Немає розкладу';
 
     const dayNames = ['Нд', 'Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб'];
-    const sortedSchedules = schedules.sort((a, b) => a.day_of_week - b.day_of_week);
+    const sortedSchedules = [...schedules].sort((a, b) => a.day_of_week - b.day_of_week);
 
     const days = sortedSchedules.map(s => dayNames[s.day_of_week % 7]);
     const uniqueDays = [...new Set(days)];

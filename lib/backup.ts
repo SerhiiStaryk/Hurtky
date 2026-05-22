@@ -1,6 +1,6 @@
 import { z } from 'zod';
-import { getChildren, getClubsByChildId, insertChild, insertClub } from './repositories';
 import { runInTransaction } from './db';
+import { getChildren, getClubsByChildId, insertChild, insertClub } from './repositories';
 
 export interface BackupScheduleSlot {
   day_of_week: number;
@@ -155,11 +155,7 @@ export async function importBackup(json: string): Promise<{ imported: number; er
   } catch (error) {
     return {
       imported: 0,
-      errors: [
-        error instanceof Error
-          ? error.message
-          : 'Невідома помилка при імпорті резервної копії',
-      ],
+      errors: [error instanceof Error ? error.message : 'Невідома помилка при імпорті резервної копії'],
     };
   }
 }

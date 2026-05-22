@@ -1,12 +1,12 @@
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
+import { getPlural } from '@/lib/i18n';
 import { Child } from '@/lib/repositories';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React from 'react';
 import { Image, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from './themed-text';
-import { getPlural } from '@/lib/i18n';
 
 interface ChildCardProps {
   child: Child;
@@ -18,6 +18,7 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
   const router = useRouter();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
+  const tintColor = primaryColor || colors.tint;
 
   const calculateAge = (birthDateStr: string): number => {
     const birthDate = new Date(birthDateStr);
@@ -85,7 +86,9 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
             {child.name}
           </ThemedText>
           <View style={styles.metaContainer}>
-            <ThemedText style={styles.meta}>{age} {getPlural(age, 'рік', 'роки', 'років')}</ThemedText>
+            <ThemedText style={styles.meta}>
+              {age} {getPlural(age, 'рік', 'роки', 'років')}
+            </ThemedText>
             <ThemedText style={[styles.meta, styles.metaDot]}>·</ThemedText>
             <ThemedText style={styles.meta}>
               {clubCount} {getPlural(clubCount, 'гурток', 'гуртки', 'гуртків')}
@@ -96,20 +99,23 @@ export function ChildCard({ child, clubCount, primaryColor = '#0a7ea4' }: ChildC
         {/* Right: Club Count Badge */}
         <View style={styles.rightContent}>
           <View style={[styles.badge, { backgroundColor: colors.tint + '15' }]}>
-            <ThemedText style={[styles.badgeText, { color: colors.tint }]}>{clubCount} {clubCount === 0 ? '⭕' : '⭐'}</ThemedText>
+            <ThemedText style={[styles.badgeText, { color: colors.tint }]}>
+              {clubCount} {clubCount === 0 ? '⭕' : '⭐'}
+            </ThemedText>
           </View>
 
           <Pressable
-            style={({ pressed }) => [
-              styles.addClubButton,
-              { opacity: pressed ? 0.6 : 1 }
-            ]}
-            onPress={(e) => {
+            style={({ pressed }) => [styles.addClubButton, { opacity: pressed ? 0.6 : 1 }]}
+            onPress={e => {
               e.stopPropagation();
               router.push({ pathname: '/club/new', params: { childId: child.id.toString() } });
             }}
           >
-            <Ionicons name="add-circle" size={28} color={colors.tint} />
+            <Ionicons
+              name='add-circle'
+              size={28}
+              color={tintColor}
+            />
           </Pressable>
         </View>
       </View>

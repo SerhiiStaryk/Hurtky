@@ -1,5 +1,4 @@
 import * as SQLite from 'expo-sqlite';
-import { Platform } from 'react-native';
 
 const DATABASE_NAME = 'clubsmanager.db';
 const DATABASE_VERSION = 1;
@@ -12,6 +11,7 @@ export async function initializeDatabase(): Promise<SQLite.SQLiteDatabase> {
   }
 
   db = await SQLite.openDatabaseAsync(DATABASE_NAME);
+  await db.execAsync('PRAGMA foreign_keys = ON');
 
   // Run migrations
   await runMigrations(db);

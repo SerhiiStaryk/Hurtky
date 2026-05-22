@@ -14,12 +14,18 @@ import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const TIME_LABELS = ['08:00', '10:00', '12:00', '14:00', '16:00', '18:00', '20:00'];
+const START_HOUR = 8;
+const END_HOUR = 21;
+const TIME_LABELS = Array.from({ length: (END_HOUR - START_HOUR) * 2 + 1 }, (_, index) => {
+  const totalMinutes = START_HOUR * 60 + index * 30;
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+});
 
 const HOUR_HEIGHT = 60;
 const HEADER_HEIGHT = 60;
-const START_HOUR = 8;
-const GRID_HEIGHT = (21 - START_HOUR) * HOUR_HEIGHT;
+const GRID_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 
 function hexToRgba(hex: string, alpha = 0.9) {
   const normalized = hex.replace('#', '');
@@ -63,6 +69,9 @@ function capitalize(value: string) {
 export default function ScheduleScreen() {
   const router = useRouter();
   const horizontalScrollRef = useRef<ScrollView>(null);
+  const listScrollRef = useRef<ScrollView>(null);
+  const sectionPositionsRef = useRef<Record<number, number>>({});
+  const pendingScrollToDayRef = useRef<number | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
@@ -74,14 +83,11 @@ export default function ScheduleScreen() {
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
-  const weekButtonBg = useThemeColor({ light: '#F2F2F7', dark: '#2C2C2E' }, 'background');
   const todayColumnBg = useThemeColor({ light: '#FFF7E6', dark: '#2C2410' }, 'background');
   const dayHeaderBg = useThemeColor({ light: '#F3F4F6', dark: '#2C2C2E' }, 'background');
   const todayHeaderBg = useThemeColor({ light: '#FEF3C7', dark: '#3D331A' }, 'background');
-  const emptyDayBg = useThemeColor({ light: '#F8FAFC', dark: '#1C1C1E' }, 'background');
   const legendChipBg = useThemeColor({ light: '#F8FAFC', dark: '#2C2C2E' }, 'background');
   const mutedTextColor = useThemeColor({ light: '#6B7280', dark: '#9CA3AF' }, 'text');
-  const blockTimeColor = useThemeColor({ light: '#374151', dark: '#D1D5DB' }, 'text');
   const blockChildColor = useThemeColor({ light: '#4B5563', dark: '#9CA3AF' }, 'text');
 
   const weekLabel = useMemo(() => {
@@ -236,19 +242,34 @@ export default function ScheduleScreen() {
 
     const top = (startOffset / 60) * HOUR_HEIGHT;
     const duration = (endMins - startMins) / 60;
-    const height = Math.max(duration * HOUR_HEIGHT, 70); // min height for readability
+    const height = Math.max(duration * HOUR_HEIGHT - 6, HOUR_HEIGHT / 2); // min height = 30 min slot
 
     return {
       top,
-      height: height - 6, // margin between blocks
+      height,
     };
   };
 
-  const scrollToToday = useCallback((animated = false) => {
-    const now = new Date();
-    const dayIndex = getISODay(now) - 1;
-    horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
-  }, []);
+  const scrollToToday = useCallback(
+    (animated = false) => {
+      const now = new Date();
+      if (viewType === 'grid') {
+        const dayIndex = getISODay(now) - 1;
+        horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
+        pendingScrollToDayRef.current = null;
+      } else {
+        const isoDay = getISODay(now);
+        const y = sectionPositionsRef.current[isoDay];
+        if (y !== undefined) {
+          listScrollRef.current?.scrollTo({ y, animated });
+          pendingScrollToDayRef.current = null;
+        } else {
+          pendingScrollToDayRef.current = isoDay;
+        }
+      }
+    },
+    [viewType],
+  );
 
   const goToToday = () => {
     const now = new Date();
@@ -289,7 +310,9 @@ export default function ScheduleScreen() {
                 key={label}
                 style={styles.timeAxisRow}
               >
-                <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>{label}</ThemedText>
+                <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>
+                  {label.endsWith(':00') ? label : ' '}
+                </ThemedText>
               </View>
             ))}
           </View>
@@ -400,6 +423,7 @@ export default function ScheduleScreen() {
 
   const renderListView = () => (
     <ScrollView
+      ref={listScrollRef}
       style={styles.listContainer}
       showsVerticalScrollIndicator={false}
     >
@@ -415,6 +439,15 @@ export default function ScheduleScreen() {
           <View
             key={label}
             style={styles.listSection}
+            onLayout={event => {
+              const y = event.nativeEvent.layout.y;
+              sectionPositionsRef.current[isoDay] = y;
+
+              if (pendingScrollToDayRef.current === isoDay) {
+                listScrollRef.current?.scrollTo({ y, animated: true });
+                pendingScrollToDayRef.current = null;
+              }
+            }}
           >
             <View style={styles.listDayHeaderRow}>
               <ThemedText style={[styles.listDayName, isToday && { color: tintColor }]}>{label}</ThemedText>
@@ -731,7 +764,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timeAxisRow: {
-    height: HOUR_HEIGHT * 2,
+    height: HOUR_HEIGHT / 2,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingRight: 8,
@@ -770,7 +803,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  todayHeader: {},
   dayName: {
     fontSize: 12,
     fontWeight: '700',

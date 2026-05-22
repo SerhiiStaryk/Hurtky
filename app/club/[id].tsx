@@ -9,6 +9,7 @@ import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useClub, useDeleteClub, useMarkAsPaid } from '@/hooks/useClubs';
 import { getPlural } from '@/lib/i18n';
+import { saveTextFile } from '@/lib/share';
 
 const dayNames = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 
@@ -131,10 +132,38 @@ export default function ClubDetailScreen() {
     return () => clearTimeout(timeout);
   }, [copiedMessage, copyScale]);
 
-  const handleCopy = async (value: string, label: string) => {
-    await Clipboard.setStringAsync(value);
-    setCopiedMessage(label);
-    copyScale.setValue(0);
+  const handlePaymentAction = (value: string, label: 'iban' | 'card') => {
+    const labelText = label === 'iban' ? 'IBAN' : 'картку';
+    const successMessage = label === 'iban' ? 'IBAN скопійовано!' : 'Картка скопійовано!';
+    const fileName = `hurtky-${label}-${new Date().toISOString().slice(0, 10)}.txt`;
+
+    Alert.alert(
+      label === 'iban' ? 'IBAN' : 'Номер картки',
+      `Ви можете скопіювати ${labelText} або зберегти його у файл.`,
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Зберегти у файл',
+          onPress: async () => {
+            try {
+              await saveTextFile(`${labelText}: ${value}`, fileName, `Зберегти ${labelText}`);
+              Alert.alert('Готово', `${labelText} збережено у файл`);
+            } catch (error) {
+              Alert.alert('Помилка', error instanceof Error ? error.message : 'Не вдалося зберегти файл');
+            }
+          },
+        },
+        {
+          text: 'Копіювати',
+          onPress: async () => {
+            await Clipboard.setStringAsync(value);
+            setCopiedMessage(successMessage);
+            copyScale.setValue(0);
+            setTimeout(() => Clipboard.setStringAsync(''), 30000);
+          },
+        },
+      ],
+    );
   };
 
   const paymentStatus = useMemo(() => {
@@ -274,9 +303,9 @@ export default function ClubDetailScreen() {
               <ThemedText style={styles.monoText}>{club.payment_iban || '–'}</ThemedText>
               <Pressable
                 style={styles.copyButton}
-                onPress={() => (club.payment_iban ? handleCopy(club.payment_iban, 'iban') : null)}
+                onPress={() => (club.payment_iban ? handlePaymentAction(club.payment_iban, 'iban') : null)}
               >
-                <ThemedText style={styles.copyButtonText}>Копіювати</ThemedText>
+                <ThemedText style={styles.copyButtonText}>Дія</ThemedText>
               </Pressable>
             </View>
           </View>
@@ -287,9 +316,9 @@ export default function ClubDetailScreen() {
               <ThemedText style={styles.monoText}>{club.payment_card || '–'}</ThemedText>
               <Pressable
                 style={styles.copyButton}
-                onPress={() => (club.payment_card ? handleCopy(club.payment_card, 'card') : null)}
+                onPress={() => (club.payment_card ? handlePaymentAction(club.payment_card, 'card') : null)}
               >
-                <ThemedText style={styles.copyButtonText}>Копіювати</ThemedText>
+                <ThemedText style={styles.copyButtonText}>Дія</ThemedText>
               </Pressable>
             </View>
           </View>
@@ -352,7 +381,7 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 40,
-    lineHeight: 40,
+    lineHeight: 48,
     textAlign: 'center',
     includeFontPadding: false,
     marginBottom: 10,

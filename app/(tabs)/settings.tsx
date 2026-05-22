@@ -10,7 +10,12 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-const themeOptions: Array<{ value: ThemeMode; label: string }> = [
+type ThemeOption = {
+  value: ThemeMode;
+  label: string;
+};
+
+const themeOptions: ThemeOption[] = [
   { value: 'system', label: 'Система' },
   { value: 'light', label: 'Світла' },
   { value: 'dark', label: 'Темна' },
@@ -48,16 +53,28 @@ export default function SettingsScreen() {
   };
 
   const handleExport = async () => {
-    setIsExporting(true);
-    try {
-      await saveAndShareBackup();
-      setExportSuccess(true);
-      setTimeout(() => setExportSuccess(false), 2000);
-    } catch (error: any) {
-      Alert.alert('Помилка', error?.message ?? 'Не вдалося експортувати резервну копію');
-    } finally {
-      setIsExporting(false);
-    }
+    Alert.alert(
+      'Увага',
+      'Резервна копія містить персональні дані. IBAN та реквізити карток також зберігаються у файлі, тому передавайте його лише довіреним особам.',
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Продовжити',
+          onPress: async () => {
+            setIsExporting(true);
+            try {
+              await saveAndShareBackup();
+              setExportSuccess(true);
+              setTimeout(() => setExportSuccess(false), 2000);
+            } catch (error: any) {
+              Alert.alert('Помилка', error?.message ?? 'Не вдалося експортувати резервну копію');
+            } finally {
+              setIsExporting(false);
+            }
+          },
+        },
+      ],
+    );
   };
 
   const handleImport = async () => {
@@ -74,6 +91,7 @@ export default function SettingsScreen() {
       }
 
       await queryClient.invalidateQueries({ queryKey: ['children'] });
+      await queryClient.invalidateQueries({ queryKey: ['clubs'] });
       Alert.alert('Імпортовано!', `Додано дітей: ${result.imported}`);
     } catch (error: any) {
       Alert.alert('Помилка', error?.message ?? 'Не вдалося імпортувати резервну копію');

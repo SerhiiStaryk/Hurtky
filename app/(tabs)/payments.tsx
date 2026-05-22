@@ -1,16 +1,17 @@
-import { LinearGradient } from 'expo-linear-gradient';
-import * as Clipboard from 'expo-clipboard';
-import { useMemo, useState } from 'react';
-import { Swipeable } from 'react-native-gesture-handler';
-import { ActivityIndicator, SectionList, Pressable, StyleSheet, Text, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
-import { useAllClubs, useMarkAsPaid } from '@/hooks/useClubs';
-import { useChildren } from '@/hooks/useChildren';
+import { ThemedText } from '@/components/themed-text';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { ThemedText } from '@/components/themed-text';
+import { useChildren } from '@/hooks/useChildren';
+import { useAllClubs, useMarkAsPaid } from '@/hooks/useClubs';
 import { getPlural } from '@/lib/i18n';
+import { saveTextFile } from '@/lib/share';
+import { Ionicons } from '@expo/vector-icons';
+import * as Clipboard from 'expo-clipboard';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import { Swipeable } from 'react-native-gesture-handler';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 const STATUS_COLORS = {
   overdue: '#dc2626',
@@ -104,14 +105,42 @@ export default function PaymentsScreen() {
   const totalMonthlyCost = paymentItems.reduce((sum, item) => sum + (item.price || 0), 0);
   const nearestUpcoming = paymentItems.find(item => item.nextPaymentDate !== null);
 
-  const handleCopy = async (value: string | undefined, label: string) => {
+  const handlePaymentAction = (value: string | undefined, label: 'iban' | 'card') => {
     if (!value) {
       return;
     }
 
-    await Clipboard.setStringAsync(value);
-    setCopiedMessage(`${label === 'iban' ? 'IBAN' : 'Картка'} скопійовано`);
-    setTimeout(() => setCopiedMessage(null), 1400);
+    const labelText = label === 'iban' ? 'IBAN' : 'картку';
+    const successText = label === 'iban' ? 'IBAN скопійовано' : 'Картка скопійовано';
+    const fileName = `hurtky-${label}-${new Date().toISOString().slice(0, 10)}.txt`;
+
+    Alert.alert(
+      label === 'iban' ? 'IBAN' : 'Номер картки',
+      `Ви можете скопіювати ${labelText} або зберегти його у файл.`,
+      [
+        { text: 'Скасувати', style: 'cancel' },
+        {
+          text: 'Зберегти у файл',
+          onPress: async () => {
+            try {
+              await saveTextFile(`${labelText}: ${value}`, fileName, `Зберегти ${labelText}`);
+              Alert.alert('Готово', `${labelText} збережено у файл`);
+            } catch (error) {
+              Alert.alert('Помилка', error instanceof Error ? error.message : 'Не вдалося зберегти файл');
+            }
+          },
+        },
+        {
+          text: 'Копіювати',
+          onPress: async () => {
+            await Clipboard.setStringAsync(value);
+            setCopiedMessage(successText);
+            setTimeout(() => setCopiedMessage(null), 1400);
+            setTimeout(() => Clipboard.setStringAsync(''), 30000);
+          },
+        },
+      ],
+    );
   };
 
   const handleMarkAsPaid = (clubId: number) => {
@@ -173,7 +202,7 @@ export default function PaymentsScreen() {
                     !item.payment_iban && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
-                  onPress={() => handleCopy(item.payment_iban, 'iban')}
+                  onPress={() => handlePaymentAction(item.payment_iban, 'iban')}
                   disabled={!item.payment_iban}
                 >
                   <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>IBAN</ThemedText>
@@ -185,7 +214,7 @@ export default function PaymentsScreen() {
                     !item.payment_card && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
-                  onPress={() => handleCopy(item.payment_card, 'card')}
+                  onPress={() => handlePaymentAction(item.payment_card, 'card')}
                   disabled={!item.payment_card}
                 >
                   <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>Картка</ThemedText>
@@ -218,16 +247,26 @@ export default function PaymentsScreen() {
         style={styles.summaryCard}
       >
         <View style={styles.summaryRow}>
-          <View>
+          <View style={styles.summaryAmountColumn}>
             <ThemedText style={styles.summaryTitle}>Загальна сума</ThemedText>
-            <ThemedText style={styles.summaryAmount}>{totalMonthlyCost} ₴</ThemedText>
+            <ThemedText
+              style={styles.summaryAmount}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+            >
+              {totalMonthlyCost} ₴
+            </ThemedText>
           </View>
           <View style={styles.summaryStats}>
             <View style={styles.statChip}>
-              <ThemedText style={styles.statText}>{clubs.length} {getPlural(clubs.length, 'гурток', 'гуртки', 'гуртків')}</ThemedText>
+              <ThemedText style={styles.statText}>
+                {clubs.length} {getPlural(clubs.length, 'гурток', 'гуртки', 'гуртків')}
+              </ThemedText>
             </View>
             <View style={styles.statChip}>
-              <ThemedText style={styles.statText}>{children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}</ThemedText>
+              <ThemedText style={styles.statText}>
+                {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}
+              </ThemedText>
             </View>
           </View>
         </View>
@@ -289,6 +328,11 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    minWidth: 0,
+  },
+  summaryAmountColumn: {
+    flex: 1,
+    minWidth: 0,
   },
   summaryTitle: {
     color: '#e2f5ff',
@@ -298,7 +342,9 @@ const styles = StyleSheet.create({
   summaryAmount: {
     color: '#fff',
     fontSize: 34,
+    lineHeight: 42,
     fontWeight: '700',
+    flexShrink: 1,
   },
   summaryStats: {
     alignItems: 'flex-end',
@@ -386,13 +432,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 14,
+    minWidth: 0,
   },
   emoji: {
     fontSize: 28,
+    lineHeight: 32,
     marginRight: 12,
+    includeFontPadding: false,
   },
   metaTextContainer: {
     flex: 1,
+    minWidth: 0,
   },
   clubName: {
     fontSize: 16,
