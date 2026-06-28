@@ -34,6 +34,18 @@ async function runMigrations(database: SQLite.SQLiteDatabase): Promise<void> {
     if (!tablesExist) {
       // Create all tables
       await createTables(database);
+    } else {
+      // Add columns if they do not exist
+      try {
+        await database.execAsync('ALTER TABLE clubs ADD COLUMN is_vacation INTEGER DEFAULT 0;');
+      } catch (e) {
+        // column may already exist
+      }
+      try {
+        await database.execAsync('ALTER TABLE clubs ADD COLUMN vacation_end_date TEXT;');
+      } catch (e) {
+        // column may already exist
+      }
     }
   } catch (error) {
     console.error('Error running migrations:', error);
@@ -77,6 +89,8 @@ async function createTables(database: SQLite.SQLiteDatabase): Promise<void> {
       next_payment_date TEXT,
       payment_iban TEXT,
       payment_card TEXT,
+      is_vacation INTEGER DEFAULT 0,
+      vacation_end_date TEXT,
       created_at TEXT DEFAULT (datetime('now'))
     );`,
 

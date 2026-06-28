@@ -68,9 +68,10 @@ export function useUpdateClub(id: number) {
 
   return useMutation({
     mutationFn: (data: UpdateClubInput) => updateClub(id, data),
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['club', id] });
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      await rescheduleAllNotifications();
     },
   });
 }

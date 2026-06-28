@@ -9,6 +9,7 @@ import { getClubsByChildIds, getUpcomingLessonsForDays } from '@/lib/repositorie
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
+import { isClubOnVacation } from '@/lib/notifications';
 import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -21,6 +22,8 @@ interface UpcomingLesson {
   endTime: string;
   dayLabel: string;
   colorHex: string;
+  isVacation?: boolean;
+  clubId: string;
 }
 
 export default function HomeScreen() {
@@ -51,16 +54,24 @@ export default function HomeScreen() {
           return;
         }
 
-        const lessonsData: UpcomingLesson[] = scheduleRows.slice(0, 3).map(schedule => ({
-          id: `${schedule.id}`,
-          childName: schedule.child_name,
-          clubName: schedule.club_name,
-          clubEmoji: schedule.club_emoji,
-          startTime: schedule.start_time,
-          endTime: schedule.end_time,
-          dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
-          colorHex: schedule.color_hex,
-        }));
+        const lessonsData: UpcomingLesson[] = scheduleRows.slice(0, 3).map(schedule => {
+          const onVacation = isClubOnVacation({
+            is_vacation: schedule.is_vacation,
+            vacation_end_date: schedule.vacation_end_date,
+          });
+          return {
+            id: `${schedule.id}`,
+            childName: schedule.child_name,
+            clubName: schedule.club_name,
+            clubEmoji: schedule.club_emoji,
+            startTime: schedule.start_time,
+            endTime: schedule.end_time,
+            dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
+            colorHex: schedule.color_hex,
+            isVacation: onVacation,
+            clubId: `${schedule.club_id}`,
+          };
+        });
 
         setUpcomingLessons(lessonsData);
       } catch (err) {
@@ -154,15 +165,16 @@ export default function HomeScreen() {
         styles.lessonCard,
         {
           backgroundColor: colors.surface,
-          borderLeftColor: lesson.colorHex,
-          opacity: pressed ? 0.9 : 1,
+          borderLeftColor: lesson.isVacation ? '#9ca3af' : lesson.colorHex,
+          opacity: lesson.isVacation ? 0.6 : (pressed ? 0.9 : 1),
         },
       ]}
+      onPress={() => router.push({ pathname: '/club/[id]', params: { id: lesson.clubId } })}
     >
       <View style={styles.lessonContent}>
         <View style={styles.lessonInfo}>
-          <ThemedText style={styles.lessonClub}>
-            {lesson.clubEmoji} {lesson.clubName}
+          <ThemedText style={[styles.lessonClub, lesson.isVacation && { textDecorationLine: 'line-through', color: '#9ca3af' }]}>
+            {lesson.clubEmoji} {lesson.clubName} {lesson.isVacation ? '(канікули)' : ''}
           </ThemedText>
           <ThemedText style={styles.lessonTime}>
             {lesson.dayLabel} · {lesson.startTime}–{lesson.endTime}
@@ -171,13 +183,16 @@ export default function HomeScreen() {
         <View
           style={[
             styles.dayBadge,
-            { backgroundColor: lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50' },
+            { backgroundColor: lesson.isVacation ? (colorScheme === 'dark' ? '#374151' : '#f3f4f6') : (lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50') },
           ]}
         >
           <ThemedText
-            style={[styles.dayBadgeText, { color: lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80' }]}
+            style={[
+              styles.dayBadgeText,
+              { color: lesson.isVacation ? '#9ca3af' : (lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80') }
+            ]}
           >
-            {lesson.dayLabel}
+            {lesson.isVacation ? 'Канікули' : lesson.dayLabel}
           </ThemedText>
         </View>
       </View>

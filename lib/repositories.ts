@@ -22,6 +22,8 @@ export interface Club {
   next_payment_date?: string | null;
   payment_iban?: string | null;
   payment_card?: string | null;
+  is_vacation?: number;
+  vacation_end_date?: string | null;
   created_at: string;
 }
 
@@ -184,6 +186,9 @@ export interface UpcomingScheduleRow {
   club_emoji: string;
   color_hex: string;
   child_name: string;
+  is_vacation?: number;
+  vacation_end_date?: string | null;
+  club_id: number;
 }
 
 export async function getUpcomingLessonsForDays(days: number[]): Promise<UpcomingScheduleRow[]> {
@@ -204,7 +209,10 @@ export async function getUpcomingLessonsForDays(days: number[]): Promise<Upcomin
        c.name AS club_name,
        c.emoji AS club_emoji,
        c.color_hex,
-       ch.name AS child_name
+       ch.name AS child_name,
+       c.is_vacation,
+       c.vacation_end_date,
+       c.id AS club_id
      FROM schedules s
      JOIN clubs c ON c.id = s.club_id
      JOIN children ch ON ch.id = c.child_id
@@ -240,8 +248,9 @@ export async function insertClub(data: CreateClubInput): Promise<number> {
   const result = await db.runAsync(
     `INSERT INTO clubs (
       child_id, name, teacher_name, location, color_hex, emoji,
-      price, next_payment_date, payment_iban, payment_card
-    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      price, next_payment_date, payment_iban, payment_card,
+      is_vacation, vacation_end_date
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
     [
       data.child_id,
       data.name,
@@ -253,6 +262,8 @@ export async function insertClub(data: CreateClubInput): Promise<number> {
       data.next_payment_date || null,
       data.payment_iban || null,
       data.payment_card || null,
+      data.is_vacation || 0,
+      data.vacation_end_date || null,
     ],
   );
   return result.lastInsertRowId;
@@ -299,6 +310,14 @@ export async function updateClub(id: number, data: UpdateClubInput): Promise<voi
   if (data.payment_card !== undefined) {
     updates.push('payment_card = ?');
     values.push(data.payment_card || null);
+  }
+  if (data.is_vacation !== undefined) {
+    updates.push('is_vacation = ?');
+    values.push(data.is_vacation);
+  }
+  if (data.vacation_end_date !== undefined) {
+    updates.push('vacation_end_date = ?');
+    values.push(data.vacation_end_date || null);
   }
 
   if (updates.length === 0) {
