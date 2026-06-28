@@ -105,7 +105,7 @@ export default function PaymentsScreen() {
   const totalMonthlyCost = paymentItems.reduce((sum, item) => sum + (item.price || 0), 0);
   const nearestUpcoming = paymentItems.find(item => item.nextPaymentDate !== null);
 
-  const handlePaymentAction = (value: string | undefined, label: 'iban' | 'card') => {
+  const handlePaymentAction = (value: string | null | undefined, label: 'iban' | 'card') => {
     if (!value) {
       return;
     }
