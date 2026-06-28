@@ -10,6 +10,7 @@ import { addDays, addWeeks, endOfWeek, format, getISODay, isSameDay, startOfWeek
 import { uk } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
+import { isClubOnVacation } from '@/lib/notifications';
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -110,6 +111,7 @@ export default function ScheduleScreen() {
         childId: number;
         startTime: string;
         endTime: string;
+        isVacation?: boolean;
       }[]
     >();
 
@@ -118,6 +120,11 @@ export default function ScheduleScreen() {
     }
 
     for (const club of allClubs) {
+      const onVacation = isClubOnVacation({
+        is_vacation: club.is_vacation,
+        vacation_end_date: club.vacation_end_date,
+      });
+
       for (const schedule of club.schedules) {
         buckets.get(schedule.day_of_week)?.push({
           clubId: club.id,
@@ -127,6 +134,7 @@ export default function ScheduleScreen() {
           childId: club.child_id,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
+          isVacation: onVacation,
         });
       }
     }
@@ -368,7 +376,7 @@ export default function ScheduleScreen() {
                         const leftPercent = layout.col * (100 / layout.totalCols);
                         const widthPercent = 100 / layout.totalCols;
                         const blockStyle = getBlockStyle(item.startTime, item.endTime);
-                        const blockTextColor = getContrastingTextColor(item.colorHex);
+                        const blockTextColor = getContrastingTextColor(item.isVacation ? '#6b7280' : item.colorHex);
 
                         return (
                           <Pressable
@@ -376,8 +384,8 @@ export default function ScheduleScreen() {
                             style={({ pressed }) => [
                               styles.scheduleBlock,
                               {
-                                backgroundColor: hexToRgba(item.colorHex, 0.9),
-                                opacity: pressed ? 0.9 : 1,
+                                backgroundColor: item.isVacation ? '#9ca3af' : hexToRgba(item.colorHex, 0.9),
+                                opacity: item.isVacation ? 0.5 : (pressed ? 0.9 : 1),
                                 top: blockStyle.top,
                                 height: blockStyle.height,
                                 left: `${leftPercent}%`,
@@ -393,10 +401,14 @@ export default function ScheduleScreen() {
                                 {item.clubEmoji}
                               </ThemedText>
                               <ThemedText
-                                style={[styles.blockTitle, { color: blockTextColor }]}
+                                style={[
+                                  styles.blockTitle,
+                                  { color: blockTextColor },
+                                  item.isVacation && { textDecorationLine: 'line-through', opacity: 0.8 }
+                                ]}
                                 numberOfLines={1}
                               >
-                                {item.clubName}
+                                {item.clubName} {item.isVacation ? '✈️' : ''}
                               </ThemedText>
                             </View>
                             <View>
@@ -459,25 +471,25 @@ export default function ScheduleScreen() {
                 style={({ pressed }) => [
                   styles.listItem,
                   {
-                    backgroundColor: hexToRgba(item.colorHex, 0.12),
-                    borderLeftColor: item.colorHex,
-                    opacity: pressed ? 0.7 : 1,
+                    backgroundColor: item.isVacation ? (colorScheme === 'dark' ? '#1f2937' : '#f3f4f6') : hexToRgba(item.colorHex, 0.12),
+                    borderLeftColor: item.isVacation ? '#9ca3af' : item.colorHex,
+                    opacity: item.isVacation ? 0.6 : (pressed ? 0.7 : 1),
                   },
                 ]}
                 onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
               >
                 <View style={styles.listItemTimeCol}>
-                  <ThemedText style={styles.listItemStartTime}>{item.startTime}</ThemedText>
+                  <ThemedText style={[styles.listItemStartTime, item.isVacation && { color: '#9ca3af' }]}>{item.startTime}</ThemedText>
                   <ThemedText style={[styles.listItemEndTime, { color: mutedTextColor }]}>{item.endTime}</ThemedText>
                 </View>
                 <View style={styles.listItemContent}>
                   <View style={styles.listItemTitleRow}>
                     <ThemedText style={styles.listItemEmoji}>{item.clubEmoji}</ThemedText>
                     <ThemedText
-                      style={styles.listItemTitle}
+                      style={[styles.listItemTitle, item.isVacation && { textDecorationLine: 'line-through', color: '#9ca3af' }]}
                       numberOfLines={1}
                     >
-                      {item.clubName}
+                      {item.clubName} {item.isVacation ? '(канікули)' : ''}
                     </ThemedText>
                   </View>
                   <ThemedText
