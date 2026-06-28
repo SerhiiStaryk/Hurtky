@@ -11,6 +11,7 @@ import {
   CreateClubInput,
   UpdateClubInput,
 } from '@/lib/repositories';
+import { rescheduleAllNotifications } from '@/lib/notifications';
 
 /**
  * Fetch all clubs for a specific child
@@ -82,8 +83,9 @@ export function useDeleteClub() {
 
   return useMutation({
     mutationFn: deleteClub,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      await rescheduleAllNotifications();
     },
   });
 }
@@ -99,9 +101,10 @@ export function useMarkAsPaid() {
     mutationFn: async ({ clubId }: { clubId: number }) => {
       await markClubAsPaid(clubId);
     },
-    onSuccess: (_, variables) => {
+    onSuccess: async (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['club', variables.clubId] });
       queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      await rescheduleAllNotifications();
     },
   });
 }

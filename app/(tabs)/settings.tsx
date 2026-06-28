@@ -3,12 +3,49 @@ import { ThemedView } from '@/components/themed-view';
 import { Colors } from '@/constants/theme';
 import { ThemeMode, setStoredThemeMode, useColorScheme } from '@/hooks/use-color-scheme';
 import { pickAndImportBackup, saveAndShareBackup } from '@/lib/share';
-import { useAppStore } from '@/store/useAppStore';
+import { useAppStore, ClassReminderOffset } from '@/store/useAppStore';
 import { useQueryClient } from '@tanstack/react-query';
 import Constants from 'expo-constants';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  rescheduleAllNotifications,
+  requestPermissionsAsync,
+  setStoredNotificationsEnabled,
+  setStoredClassReminderOffset,
+  setStoredPaymentRemindersEnabled,
+} from '@/lib/notifications';
+import * as Notifications from 'expo-notifications';
+
+const ToggleSwitch = ({ value, onValueChange, colors }: { value: boolean; onValueChange: () => void; colors: any }) => (
+  <Pressable
+    onPress={onValueChange}
+    style={{
+      width: 50,
+      height: 28,
+      borderRadius: 14,
+      backgroundColor: value ? colors.tint : (colors.border || '#ccc'),
+      padding: 2,
+      justifyContent: 'center',
+    }}
+  >
+    <View
+      style={{
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#fff',
+        alignSelf: value ? 'flex-end' : 'flex-start',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 2,
+        elevation: 2,
+      }}
+    />
+  </Pressable>
+);
 
 type ThemeOption = {
   value: ThemeMode;
@@ -29,12 +66,75 @@ export default function SettingsScreen() {
   const themeMode = useAppStore(state => state.themeMode);
   const setThemeMode = useAppStore(state => state.setThemeMode);
 
+  const notificationsEnabled = useAppStore(state => state.notificationsEnabled);
+  const setNotificationsEnabled = useAppStore(state => state.setNotificationsEnabled);
+  const classReminderOffset = useAppStore(state => state.classReminderOffset);
+  const setClassReminderOffset = useAppStore(state => state.setClassReminderOffset);
+  const paymentRemindersEnabled = useAppStore(state => state.paymentRemindersEnabled);
+  const setPaymentRemindersEnabled = useAppStore(state => state.setPaymentRemindersEnabled);
+
   const [isExporting, setIsExporting] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
   const [exportSuccess, setExportSuccess] = useState(false);
   const [isSavingTheme, setIsSavingTheme] = useState(false);
+  const [permissionStatus, setPermissionStatus] = useState<boolean | null>(null);
 
   const appVersion = Constants.expoConfig?.version ?? '1.0.0';
+
+  useEffect(() => {
+    async function checkPermission() {
+      const { status } = await Notifications.getPermissionsAsync();
+      setPermissionStatus(status === 'granted');
+    }
+    checkPermission();
+  }, []);
+
+  const offsetOptions: { value: ClassReminderOffset; label: string }[] = [
+    { value: 0, label: 'Вчасно' },
+    { value: 15, label: '15 хв' },
+    { value: 30, label: '30 хв' },
+    { value: 60, label: '1 год' },
+    { value: 120, label: '2 год' },
+  ];
+
+  const handleRequestPermission = async () => {
+    const granted = await requestPermissionsAsync();
+    setPermissionStatus(granted);
+    if (granted) {
+      Alert.alert('Успішно', 'Дозвіл на сповіщення надано!');
+      await rescheduleAllNotifications();
+    } else {
+      Alert.alert('Помилка', 'Не вдалося отримати дозвіл на сповіщення.');
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    const nextValue = !notificationsEnabled;
+    if (nextValue) {
+      const granted = await requestPermissionsAsync();
+      setPermissionStatus(granted);
+      if (!granted) {
+        Alert.alert('Помилка', 'Будь ласка, дозвольте надсилання сповіщень у налаштуваннях пристрою.');
+        return;
+      }
+    }
+    setNotificationsEnabled(nextValue);
+    await setStoredNotificationsEnabled(nextValue);
+    await rescheduleAllNotifications();
+  };
+
+  const handleOffsetChange = async (offset: ClassReminderOffset) => {
+    setClassReminderOffset(offset);
+    await setStoredClassReminderOffset(offset);
+    await rescheduleAllNotifications();
+  };
+
+  const handleTogglePaymentReminders = async () => {
+    const nextValue = !paymentRemindersEnabled;
+    setPaymentRemindersEnabled(nextValue);
+    await setStoredPaymentRemindersEnabled(nextValue);
+    await rescheduleAllNotifications();
+  };
 
   const handleThemeModeChange = async (mode: ThemeMode) => {
     if (mode === themeMode) {
@@ -92,6 +192,7 @@ export default function SettingsScreen() {
 
       await queryClient.invalidateQueries({ queryKey: ['children'] });
       await queryClient.invalidateQueries({ queryKey: ['clubs'] });
+      await rescheduleAllNotifications();
       Alert.alert('Імпортовано!', `Додано дітей: ${result.imported}`);
     } catch (error: any) {
       Alert.alert('Помилка', error?.message ?? 'Не вдалося імпортувати резервну копію');
@@ -156,6 +257,98 @@ export default function SettingsScreen() {
                 <ThemedText style={styles.buttonText}>Обрати файл</ThemedText>
               )}
             </Pressable>
+          </View>
+
+          <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Сповіщення</ThemedText>
+          <View style={[styles.card, { backgroundColor: colors.surface }]}>
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <ThemedText style={styles.settingTitle}>Дозвіл на сповіщення</ThemedText>
+                <ThemedText style={[styles.settingSubtitle, { color: colors.icon }]}>
+                  {permissionStatus === true ? 'Надано' : permissionStatus === false ? 'Не надано' : 'Перевірка...'}
+                </ThemedText>
+              </View>
+              {permissionStatus !== true && (
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.permissionButton,
+                    { backgroundColor: colors.tint, opacity: pressed ? 0.8 : 1 },
+                  ]}
+                  onPress={handleRequestPermission}
+                >
+                  <ThemedText style={styles.permissionButtonText}>Надати</ThemedText>
+                </Pressable>
+              )}
+            </View>
+
+            <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+            <View style={styles.settingRow}>
+              <View style={styles.settingInfo}>
+                <ThemedText style={styles.settingTitle}>Увімкнути сповіщення</ThemedText>
+                <ThemedText style={[styles.settingSubtitle, { color: colors.icon }]}>
+                  Надсилати нагадування про заняття та оплату
+                </ThemedText>
+              </View>
+              <ToggleSwitch
+                value={notificationsEnabled}
+                onValueChange={handleToggleNotifications}
+                colors={colors}
+              />
+            </View>
+
+            {notificationsEnabled && (
+              <>
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+                <View style={styles.settingCol}>
+                  <ThemedText style={styles.settingTitle}>Час нагадування про заняття</ThemedText>
+                  <ThemedText style={[styles.settingSubtitle, { color: colors.icon, marginBottom: 12 }]}>
+                    За скільки часу до початку заняття надіслати сповіщення
+                  </ThemedText>
+
+                  <View style={styles.offsetOptions}>
+                    {offsetOptions.map(option => {
+                      const isActive = option.value === classReminderOffset;
+                      return (
+                        <Pressable
+                          key={option.value}
+                          onPress={() => handleOffsetChange(option.value)}
+                          style={({ pressed }) => [
+                            styles.offsetOption,
+                            {
+                              borderColor: isActive ? colors.tint : colors.border,
+                              backgroundColor: isActive ? colors.tint : 'transparent',
+                              opacity: pressed ? 0.8 : 1,
+                            },
+                          ]}
+                        >
+                          <ThemedText style={[styles.offsetOptionText, { color: isActive ? '#fff' : colors.text }]}>
+                            {option.label}
+                          </ThemedText>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+
+                <View style={[styles.divider, { backgroundColor: colors.border }]} />
+
+                <View style={styles.settingRow}>
+                  <View style={styles.settingInfo}>
+                    <ThemedText style={styles.settingTitle}>Нагадування про оплату</ThemedText>
+                    <ThemedText style={[styles.settingSubtitle, { color: colors.icon }]}>
+                      Нагадувати в день оплати гуртка о 9:00
+                    </ThemedText>
+                  </View>
+                  <ToggleSwitch
+                    value={paymentRemindersEnabled}
+                    onValueChange={handleTogglePaymentReminders}
+                    colors={colors}
+                  />
+                </View>
+              </>
+            )}
           </View>
 
           <ThemedText style={[styles.sectionTitle, { marginTop: 24 }]}>Оформлення</ThemedText>
@@ -321,5 +514,61 @@ const styles = StyleSheet.create({
   rowValue: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  settingCol: {
+    paddingVertical: 6,
+  },
+  settingInfo: {
+    flex: 1,
+    paddingRight: 16,
+  },
+  settingTitle: {
+    fontSize: 16,
+    fontWeight: '800',
+    marginBottom: 4,
+  },
+  settingSubtitle: {
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '500',
+  },
+  divider: {
+    height: 1,
+    marginVertical: 12,
+  },
+  permissionButton: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
+  },
+  permissionButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  offsetOptions: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 8,
+  },
+  offsetOption: {
+    borderWidth: 1,
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    marginRight: 8,
+    marginBottom: 8,
+    alignItems: 'center',
+    minWidth: 60,
+  },
+  offsetOptionText: {
+    fontSize: 13,
+    fontWeight: '800',
   },
 });

@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import ClubForm, { ClubFormValues } from '@/components/ClubForm';
 import { useClub, useUpdateClub } from '@/hooks/useClubs';
 import { upsertSchedules } from '@/lib/repositories';
+import { rescheduleAllNotifications } from '@/lib/notifications';
 import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 
@@ -39,6 +40,7 @@ export default function EditClubScreen() {
     updateClubMutation.mutate(values, {
       onSuccess: async () => {
         await upsertSchedules(clubId, values.schedules);
+        await rescheduleAllNotifications();
         router.back();
       },
     });

@@ -5,6 +5,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildren } from '@/hooks/useChildren';
 import { useCreateClub } from '@/hooks/useClubs';
 import { upsertSchedules } from '@/lib/repositories';
+import { rescheduleAllNotifications } from '@/lib/notifications';
 import { Picker } from '@react-native-picker/picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ export default function NewClubScreen() {
           if (values.schedules.length > 0) {
             await upsertSchedules(insertedClubId, values.schedules);
           }
+          await rescheduleAllNotifications();
           router.back();
         },
       },

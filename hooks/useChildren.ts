@@ -14,6 +14,7 @@ import {
   CreateChildInput,
   UpdateChildInput,
 } from '@/lib/repositories';
+import { rescheduleAllNotifications } from '@/lib/notifications';
 
 /**
  * Fetch all children
@@ -73,8 +74,9 @@ export function useDeleteChild() {
 
   return useMutation({
     mutationFn: deleteChild,
-    onSuccess: () => {
+    onSuccess: async () => {
       queryClient.invalidateQueries({ queryKey: ['children'] });
+      await rescheduleAllNotifications();
     },
   });
 }
