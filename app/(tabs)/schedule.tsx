@@ -4,6 +4,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs } from '@/hooks/useClubs';
+import { isClubOnVacation } from '@/lib/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -28,20 +29,21 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const TIME_LABELS = [
-  '08:00',
-  '10:00',
-  '12:00',
-  '14:00',
-  '16:00',
-  '18:00',
-  '20:00',
-];
+const START_HOUR = 8;
+const END_HOUR = 21;
+const TIME_LABELS = Array.from(
+  { length: (END_HOUR - START_HOUR) * 2 + 1 },
+  (_, index) => {
+    const totalMinutes = START_HOUR * 60 + index * 30;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  },
+);
 
 const HOUR_HEIGHT = 60;
 const HEADER_HEIGHT = 60;
-const START_HOUR = 8;
-const GRID_HEIGHT = (21 - START_HOUR) * HOUR_HEIGHT;
+const GRID_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
 
 function hexToRgba(hex: string, alpha = 0.9) {
   const normalized = hex.replace('#', '');
@@ -150,6 +152,7 @@ export default function ScheduleScreen() {
         childId: number;
         startTime: string;
         endTime: string;
+        isVacation?: boolean;
       }[]
     >();
 
@@ -158,6 +161,11 @@ export default function ScheduleScreen() {
     }
 
     for (const club of allClubs) {
+      const onVacation = isClubOnVacation({
+        is_vacation: club.is_vacation,
+        vacation_end_date: club.vacation_end_date,
+      });
+
       for (const schedule of club.schedules) {
         buckets.get(schedule.day_of_week)?.push({
           clubId: club.id,
@@ -167,6 +175,7 @@ export default function ScheduleScreen() {
           childId: club.child_id,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
+          isVacation: onVacation,
         });
       }
     }
@@ -340,7 +349,7 @@ export default function ScheduleScreen() {
                 <ThemedText
                   style={[styles.timeLabel, { color: mutedTextColor }]}
                 >
-                  {label}
+                  {label.endsWith(':00') ? label : ' '}
                 </ThemedText>
               </View>
             ))}
@@ -412,7 +421,7 @@ export default function ScheduleScreen() {
                           item.endTime,
                         );
                         const blockTextColor = getContrastingTextColor(
-                          item.colorHex,
+                          item.isVacation ? '#6b7280' : item.colorHex,
                         );
 
                         return (
@@ -421,8 +430,14 @@ export default function ScheduleScreen() {
                             style={({ pressed }) => [
                               styles.scheduleBlock,
                               {
-                                backgroundColor: hexToRgba(item.colorHex, 0.9),
-                                opacity: pressed ? 0.9 : 1,
+                                backgroundColor: item.isVacation
+                                  ? '#9ca3af'
+                                  : hexToRgba(item.colorHex, 0.9),
+                                opacity: item.isVacation
+                                  ? 0.5
+                                  : pressed
+                                    ? 0.9
+                                    : 1,
                                 top: blockStyle.top,
                                 height: blockStyle.height,
                                 left: `${leftPercent}%`,
@@ -449,10 +464,14 @@ export default function ScheduleScreen() {
                                 style={[
                                   styles.blockTitle,
                                   { color: blockTextColor },
+                                  item.isVacation && {
+                                    textDecorationLine: 'line-through',
+                                    opacity: 0.8,
+                                  },
                                 ]}
                                 numberOfLines={1}
                               >
-                                {item.clubName}
+                                {item.clubName} {item.isVacation ? '✈️' : ''}
                               </ThemedText>
                             </View>
                             <View>
@@ -511,9 +530,15 @@ export default function ScheduleScreen() {
                 style={({ pressed }) => [
                   styles.listItem,
                   {
-                    backgroundColor: hexToRgba(item.colorHex, 0.12),
-                    borderLeftColor: item.colorHex,
-                    opacity: pressed ? 0.7 : 1,
+                    backgroundColor: item.isVacation
+                      ? colorScheme === 'dark'
+                        ? '#1f2937'
+                        : '#f3f4f6'
+                      : hexToRgba(item.colorHex, 0.12),
+                    borderLeftColor: item.isVacation
+                      ? '#9ca3af'
+                      : item.colorHex,
+                    opacity: item.isVacation ? 0.6 : pressed ? 0.7 : 1,
                   },
                 ]}
                 onPress={() =>
