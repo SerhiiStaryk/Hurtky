@@ -9,7 +9,15 @@ import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, SectionList, StyleSheet, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Pressable,
+  SectionList,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { Swipeable } from 'react-native-gesture-handler';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -40,7 +48,10 @@ export default function PaymentsScreen() {
   const markAsPaidMutation = useMarkAsPaid();
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
 
-  const childMap = useMemo(() => new Map(children.map(child => [child.id, child.name])), [children]);
+  const childMap = useMemo(
+    () => new Map(children.map((child) => [child.id, child.name])),
+    [children],
+  );
 
   const now = useMemo(() => {
     const today = new Date();
@@ -50,14 +61,25 @@ export default function PaymentsScreen() {
 
   const paymentItems = useMemo(() => {
     const items = clubs
-      .map(club => {
-        const nextPaymentDate = club.next_payment_date ? new Date(club.next_payment_date) : null;
-
-        const diffDays = nextPaymentDate
-          ? Math.ceil((nextPaymentDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      .map((club) => {
+        const nextPaymentDate = club.next_payment_date
+          ? new Date(club.next_payment_date)
           : null;
 
-        const status = nextPaymentDate ? (diffDays! < 0 ? 'overdue' : diffDays! <= 7 ? 'week' : 'future') : 'none';
+        const diffDays = nextPaymentDate
+          ? Math.ceil(
+              (nextPaymentDate.getTime() - now.getTime()) /
+                (1000 * 60 * 60 * 24),
+            )
+          : null;
+
+        const status = nextPaymentDate
+          ? diffDays! < 0
+            ? 'overdue'
+            : diffDays! <= 7
+              ? 'week'
+              : 'future'
+          : 'none';
 
         return {
           ...club,
@@ -83,12 +105,21 @@ export default function PaymentsScreen() {
     return items;
   }, [clubs, childMap, now]);
 
-  const overdueItems = useMemo(() => paymentItems.filter(item => item.status === 'overdue'), [paymentItems]);
+  const overdueItems = useMemo(
+    () => paymentItems.filter((item) => item.status === 'overdue'),
+    [paymentItems],
+  );
 
-  const weekItems = useMemo(() => paymentItems.filter(item => item.status === 'week'), [paymentItems]);
+  const weekItems = useMemo(
+    () => paymentItems.filter((item) => item.status === 'week'),
+    [paymentItems],
+  );
 
   const futureItems = useMemo(
-    () => paymentItems.filter(item => item.status === 'future' || item.status === 'none'),
+    () =>
+      paymentItems.filter(
+        (item) => item.status === 'future' || item.status === 'none',
+      ),
     [paymentItems],
   );
 
@@ -98,20 +129,29 @@ export default function PaymentsScreen() {
         { title: 'Прострочено', data: overdueItems },
         { title: 'Цього тижня', data: weekItems },
         { title: 'Наступного місяця', data: futureItems },
-      ].filter(section => section.data.length > 0),
+      ].filter((section) => section.data.length > 0),
     [overdueItems, weekItems, futureItems],
   );
 
-  const totalMonthlyCost = paymentItems.reduce((sum, item) => sum + (item.price || 0), 0);
-  const nearestUpcoming = paymentItems.find(item => item.nextPaymentDate !== null);
+  const totalMonthlyCost = paymentItems.reduce(
+    (sum, item) => sum + (item.price || 0),
+    0,
+  );
+  const nearestUpcoming = paymentItems.find(
+    (item) => item.nextPaymentDate !== null,
+  );
 
-  const handlePaymentAction = (value: string | null | undefined, label: 'iban' | 'card') => {
+  const handlePaymentAction = (
+    value: string | undefined,
+    label: 'iban' | 'card',
+  ) => {
     if (!value) {
       return;
     }
 
     const labelText = label === 'iban' ? 'IBAN' : 'картку';
-    const successText = label === 'iban' ? 'IBAN скопійовано' : 'Картка скопійовано';
+    const successText =
+      label === 'iban' ? 'IBAN скопійовано' : 'Картка скопійовано';
     const fileName = `hurtky-${label}-${new Date().toISOString().slice(0, 10)}.txt`;
 
     Alert.alert(
@@ -123,10 +163,19 @@ export default function PaymentsScreen() {
           text: 'Зберегти у файл',
           onPress: async () => {
             try {
-              await saveTextFile(`${labelText}: ${value}`, fileName, `Зберегти ${labelText}`);
+              await saveTextFile(
+                `${labelText}: ${value}`,
+                fileName,
+                `Зберегти ${labelText}`,
+              );
               Alert.alert('Готово', `${labelText} збережено у файл`);
             } catch (error) {
-              Alert.alert('Помилка', error instanceof Error ? error.message : 'Не вдалося зберегти файл');
+              Alert.alert(
+                'Помилка',
+                error instanceof Error
+                  ? error.message
+                  : 'Не вдалося зберегти файл',
+              );
             }
           },
         },
@@ -152,17 +201,19 @@ export default function PaymentsScreen() {
       style={styles.payAction}
       onPress={() => handleMarkAsPaid(item.id)}
     >
-      <Ionicons
-        name='checkmark'
-        size={22}
-        color='#fff'
-      />
+      <Ionicons name="checkmark" size={22} color="#fff" />
       <Text style={styles.payActionText}>Оплачено</Text>
     </Pressable>
   );
 
-  const renderPaymentItem = ({ item }: { item: (typeof paymentItems)[number] }) => {
-    const statusColor = STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] || STATUS_COLORS.none;
+  const renderPaymentItem = ({
+    item,
+  }: {
+    item: (typeof paymentItems)[number];
+  }) => {
+    const statusColor =
+      STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] ||
+      STATUS_COLORS.none;
 
     return (
       <Swipeable
@@ -172,25 +223,41 @@ export default function PaymentsScreen() {
         <View style={[styles.itemCard, { backgroundColor: colors.background }]}>
           <View style={styles.itemRow}>
             <View style={styles.statusColumn}>
-              <View style={[styles.statusDot, { backgroundColor: statusColor }]} />
+              <View
+                style={[styles.statusDot, { backgroundColor: statusColor }]}
+              />
             </View>
             <View style={styles.itemContent}>
               <View style={styles.itemHeader}>
                 <ThemedText style={styles.emoji}>{item.emoji}</ThemedText>
                 <View style={styles.metaTextContainer}>
                   <ThemedText style={styles.clubName}>{item.name}</ThemedText>
-                  <ThemedText style={styles.childName}>{item.childName}</ThemedText>
+                  <ThemedText style={styles.childName}>
+                    {item.childName}
+                  </ThemedText>
                 </View>
               </View>
 
               <View style={styles.paymentRow}>
                 <View>
-                  <ThemedText style={[styles.paymentLabel, { color: colors.icon }]}>Дата</ThemedText>
-                  <ThemedText style={styles.paymentValue}>{formatDate(item.nextPaymentDate)}</ThemedText>
+                  <ThemedText
+                    style={[styles.paymentLabel, { color: colors.icon }]}
+                  >
+                    Дата
+                  </ThemedText>
+                  <ThemedText style={styles.paymentValue}>
+                    {formatDate(item.nextPaymentDate)}
+                  </ThemedText>
                 </View>
                 <View style={styles.amountContainer}>
-                  <ThemedText style={[styles.paymentLabel, { color: colors.icon }]}>Сума</ThemedText>
-                  <ThemedText style={styles.paymentValue}>{item.price} ₴</ThemedText>
+                  <ThemedText
+                    style={[styles.paymentLabel, { color: colors.icon }]}
+                  >
+                    Сума
+                  </ThemedText>
+                  <ThemedText style={styles.paymentValue}>
+                    {item.price} ₴
+                  </ThemedText>
                 </View>
               </View>
 
@@ -198,26 +265,42 @@ export default function PaymentsScreen() {
                 <Pressable
                   style={({ pressed }) => [
                     styles.copyButton,
-                    { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff', borderColor: colors.tint + '40' },
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#1f2937' : '#fff',
+                      borderColor: colors.tint + '40',
+                    },
                     !item.payment_iban && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
                   onPress={() => handlePaymentAction(item.payment_iban, 'iban')}
                   disabled={!item.payment_iban}
                 >
-                  <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>IBAN</ThemedText>
+                  <ThemedText
+                    style={[styles.copyButtonText, { color: colors.tint }]}
+                  >
+                    IBAN
+                  </ThemedText>
                 </Pressable>
                 <Pressable
                   style={({ pressed }) => [
                     styles.copyButton,
-                    { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff', borderColor: colors.tint + '40' },
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#1f2937' : '#fff',
+                      borderColor: colors.tint + '40',
+                    },
                     !item.payment_card && styles.copyButtonDisabled,
                     pressed && styles.copyButtonPressed,
                   ]}
                   onPress={() => handlePaymentAction(item.payment_card, 'card')}
                   disabled={!item.payment_card}
                 >
-                  <ThemedText style={[styles.copyButtonText, { color: colors.tint }]}>Картка</ThemedText>
+                  <ThemedText
+                    style={[styles.copyButtonText, { color: colors.tint }]}
+                  >
+                    Картка
+                  </ThemedText>
                 </Pressable>
               </View>
             </View>
@@ -229,21 +312,26 @@ export default function PaymentsScreen() {
 
   if (isClubsLoading || isChildrenLoading) {
     return (
-      <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size='large'
-            color={colors.tint}
-          />
+          <ActivityIndicator size="large" color={colors.tint} />
         </View>
       </SafeAreaView>
     );
   }
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <LinearGradient
-        colors={colorScheme === 'dark' ? ['#1e293b', '#0f172a'] : ['#0a7ea4', '#06627b']}
+        colors={
+          colorScheme === 'dark'
+            ? ['#1e293b', '#0f172a']
+            : ['#0a7ea4', '#06627b']
+        }
         style={styles.summaryCard}
       >
         <View style={styles.summaryRow}>
@@ -260,22 +348,30 @@ export default function PaymentsScreen() {
           <View style={styles.summaryStats}>
             <View style={styles.statChip}>
               <ThemedText style={styles.statText}>
-                {clubs.length} {getPlural(clubs.length, 'гурток', 'гуртки', 'гуртків')}
+                {clubs.length}{' '}
+                {getPlural(clubs.length, 'гурток', 'гуртки', 'гуртків')}
               </ThemedText>
             </View>
             <View style={styles.statChip}>
               <ThemedText style={styles.statText}>
-                {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')}
+                {children.length}{' '}
+                {getPlural(children.length, 'дитина', 'дитини', 'дітей')}
               </ThemedText>
             </View>
           </View>
         </View>
         <View style={styles.upcomingRow}>
           <View>
-            <ThemedText style={styles.upcomingLabel}>Найближча оплата</ThemedText>
-            <ThemedText style={styles.upcomingDate}>{formatDate(nearestUpcoming?.nextPaymentDate ?? null)}</ThemedText>
+            <ThemedText style={styles.upcomingLabel}>
+              Найближча оплата
+            </ThemedText>
+            <ThemedText style={styles.upcomingDate}>
+              {formatDate(nearestUpcoming?.nextPaymentDate ?? null)}
+            </ThemedText>
           </View>
-          <ThemedText style={styles.upcomingAmount}>{nearestUpcoming ? `${nearestUpcoming.price} ₴` : '—'}</ThemedText>
+          <ThemedText style={styles.upcomingAmount}>
+            {nearestUpcoming ? `${nearestUpcoming.price} ₴` : '—'}
+          </ThemedText>
         </View>
       </LinearGradient>
 
@@ -287,7 +383,9 @@ export default function PaymentsScreen() {
 
       <SectionList
         sections={sections}
-        keyExtractor={item => item?.id?.toString() ?? Math.random().toString()}
+        keyExtractor={(item) =>
+          item?.id?.toString() ?? Math.random().toString()
+        }
         contentContainerStyle={styles.listContent}
         renderSectionHeader={({ section: { title } }) => (
           <View style={styles.sectionHeader}>
@@ -297,7 +395,9 @@ export default function PaymentsScreen() {
         renderItem={renderPaymentItem}
         ListEmptyComponent={() => (
           <View style={styles.emptyState}>
-            <ThemedText style={styles.emptyText}>Платежів не знайдено.</ThemedText>
+            <ThemedText style={styles.emptyText}>
+              Платежів не знайдено.
+            </ThemedText>
           </View>
         )}
       />
