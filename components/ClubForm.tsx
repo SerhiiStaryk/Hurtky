@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Picker } from '@react-native-picker/picker';
 import { useEffect, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import { useFieldArray, useForm, useWatch } from 'react-hook-form';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { z } from 'zod';
 
@@ -125,7 +125,6 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
     control,
     setValue,
     handleSubmit,
-    watch,
     reset,
     formState: { errors },
   } = useForm<ClubFormValues>({
@@ -145,7 +144,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
     }
   }, [defaultValues, reset]);
 
-  const formValues = watch();
+  const formValues = (useWatch({ control }) ?? initialValues) as ClubFormValues;
   const currentEmoji = formValues.emoji || initialValues.emoji;
   const currentColor = formValues.color_hex || initialValues.color_hex;
 
@@ -245,7 +244,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
                 borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
               },
             ]}
-            value={formValues.teacher_name}
+            value={formValues.teacher_name ?? ''}
             onChangeText={text => setValue('teacher_name', text)}
             placeholder='Ім’я викладача'
             placeholderTextColor={placeholderColor}
@@ -263,7 +262,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
                 borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
               },
             ]}
-            value={formValues.location}
+            value={formValues.location ?? ''}
             onChangeText={text => setValue('location', text)}
             placeholder='Локація'
             placeholderTextColor={placeholderColor}
@@ -416,7 +415,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
                   borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
                 },
               ]}
-              value={formValues.payment_iban}
+              value={formValues.payment_iban ?? ''}
               onChangeText={text => setValue('payment_iban', text)}
               placeholder='IBAN'
               placeholderTextColor={placeholderColor}
@@ -433,7 +432,7 @@ export default function ClubForm({ defaultValues, onSubmit, submitLabel, isLoadi
                   borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
                 },
               ]}
-              value={formValues.payment_card}
+              value={formValues.payment_card ?? ''}
               onChangeText={text => setValue('payment_card', text)}
               placeholder='Номер картки'
               placeholderTextColor={placeholderColor}

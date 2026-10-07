@@ -87,9 +87,6 @@ function capitalize(value: string) {
 export default function ScheduleScreen() {
   const router = useRouter();
   const horizontalScrollRef = useRef<ScrollView>(null);
-  const listScrollRef = useRef<ScrollView>(null);
-  const sectionPositionsRef = useRef<Record<number, number>>({});
-  const pendingScrollToDayRef = useRef<number | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
@@ -103,6 +100,10 @@ export default function ScheduleScreen() {
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
+  const weekButtonBg = useThemeColor(
+    { light: '#F2F2F7', dark: '#2C2C2E' },
+    'background',
+  );
   const todayColumnBg = useThemeColor(
     { light: '#FFF7E6', dark: '#2C2410' },
     'background',
@@ -295,34 +296,19 @@ export default function ScheduleScreen() {
 
     const top = (startOffset / 60) * HOUR_HEIGHT;
     const duration = (endMins - startMins) / 60;
-    const height = Math.max(duration * HOUR_HEIGHT - 6, HOUR_HEIGHT / 2); // min height = 30 min slot
+    const height = Math.max(duration * HOUR_HEIGHT, 70); // min height for readability
 
     return {
       top,
-      height,
+      height: height - 6, // margin between blocks
     };
   };
 
-  const scrollToToday = useCallback(
-    (animated = false) => {
-      const now = new Date();
-      if (viewType === 'grid') {
-        const dayIndex = getISODay(now) - 1;
-        horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
-        pendingScrollToDayRef.current = null;
-      } else {
-        const isoDay = getISODay(now);
-        const y = sectionPositionsRef.current[isoDay];
-        if (y !== undefined) {
-          listScrollRef.current?.scrollTo({ y, animated });
-          pendingScrollToDayRef.current = null;
-        } else {
-          pendingScrollToDayRef.current = isoDay;
-        }
-      }
-    },
-    [viewType],
-  );
+  const scrollToToday = useCallback((animated = false) => {
+    const now = new Date();
+    const dayIndex = getISODay(now) - 1;
+    horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
+  }, []);
 
   const goToToday = () => {
     const now = new Date();
@@ -515,7 +501,6 @@ export default function ScheduleScreen() {
 
   const renderListView = () => (
     <ScrollView
-      ref={listScrollRef}
       style={styles.listContainer}
       showsVerticalScrollIndicator={false}
     >
@@ -528,19 +513,7 @@ export default function ScheduleScreen() {
         if (items.length === 0) return null;
 
         return (
-          <View
-            key={label}
-            style={styles.listSection}
-            onLayout={(event) => {
-              const y = event.nativeEvent.layout.y;
-              sectionPositionsRef.current[isoDay] = y;
-
-              if (pendingScrollToDayRef.current === isoDay) {
-                listScrollRef.current?.scrollTo({ y, animated: true });
-                pendingScrollToDayRef.current = null;
-              }
-            }}
-          >
+          <View key={label} style={styles.listSection}>
             <View style={styles.listDayHeaderRow}>
               <ThemedText
                 style={[styles.listDayName, isToday && { color: tintColor }]}
@@ -576,12 +549,7 @@ export default function ScheduleScreen() {
                 }
               >
                 <View style={styles.listItemTimeCol}>
-                  <ThemedText
-                    style={[
-                      styles.listItemStartTime,
-                      item.isVacation && { color: '#9ca3af' },
-                    ]}
-                  >
+                  <ThemedText style={styles.listItemStartTime}>
                     {item.startTime}
                   </ThemedText>
                   <ThemedText
@@ -595,17 +563,8 @@ export default function ScheduleScreen() {
                     <ThemedText style={styles.listItemEmoji}>
                       {item.clubEmoji}
                     </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.listItemTitle,
-                        item.isVacation && {
-                          textDecorationLine: 'line-through',
-                          color: '#9ca3af',
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {item.clubName} {item.isVacation ? '(канікули)' : ''}
+                    <ThemedText style={styles.listItemTitle} numberOfLines={1}>
+                      {item.clubName}
                     </ThemedText>
                   </View>
                   <ThemedText
@@ -664,7 +623,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() => setWeekStart((prev) => addWeeks(prev, -1))}
           >
@@ -675,7 +634,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.todayButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={goToToday}
           >
@@ -686,7 +645,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() => setWeekStart((prev) => addWeeks(prev, 1))}
           >
@@ -699,7 +658,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.viewToggleButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() =>
               setViewType((prev) => (prev === 'grid' ? 'list' : 'grid'))
@@ -892,7 +851,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timeAxisRow: {
-    height: HOUR_HEIGHT / 2,
+    height: HOUR_HEIGHT * 2,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingRight: 8,
@@ -931,6 +890,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  todayHeader: {},
   dayName: {
     fontSize: 12,
     fontWeight: '700',

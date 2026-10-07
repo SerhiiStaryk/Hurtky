@@ -58,7 +58,7 @@ function formatDuration(startTime: string, endTime: string) {
   return `${minutes} хв`;
 }
 
-function formatPaymentDate(value?: string) {
+function formatPaymentDate(value?: string | null) {
   if (!value) {
     return 'Немає';
   }

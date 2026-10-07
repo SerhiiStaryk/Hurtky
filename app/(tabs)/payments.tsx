@@ -4,6 +4,7 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs, useMarkAsPaid } from '@/hooks/useClubs';
 import { getPlural } from '@/lib/i18n';
+import type { ClubWithSchedules } from '@/lib/repositories';
 import { saveTextFile } from '@/lib/share';
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
@@ -26,6 +27,15 @@ const STATUS_COLORS = {
   week: '#f59e0b',
   future: '#16a34a',
   none: '#9ca3af',
+};
+
+type PaymentStatus = keyof typeof STATUS_COLORS;
+
+type PaymentItem = ClubWithSchedules & {
+  childName: string;
+  nextPaymentDate: Date | null;
+  diffDays: number | null;
+  status: PaymentStatus;
 };
 
 function formatDate(value?: Date | null) {
@@ -59,7 +69,7 @@ export default function PaymentsScreen() {
     return today;
   }, []);
 
-  const paymentItems = useMemo(() => {
+  const paymentItems = useMemo<PaymentItem[]>(() => {
     const items = clubs
       .map((club) => {
         const nextPaymentDate = club.next_payment_date
@@ -73,10 +83,10 @@ export default function PaymentsScreen() {
             )
           : null;
 
-        const status = nextPaymentDate
-          ? diffDays! < 0
+        const status: PaymentStatus = nextPaymentDate
+          ? diffDays !== null && diffDays < 0
             ? 'overdue'
-            : diffDays! <= 7
+            : diffDays !== null && diffDays <= 7
               ? 'week'
               : 'future'
           : 'none';
@@ -142,7 +152,7 @@ export default function PaymentsScreen() {
   );
 
   const handlePaymentAction = (
-    value: string | undefined,
+    value: string | null | undefined,
     label: 'iban' | 'card',
   ) => {
     if (!value) {
@@ -196,7 +206,7 @@ export default function PaymentsScreen() {
     markAsPaidMutation.mutate({ clubId });
   };
 
-  const renderRightActions = (item: (typeof paymentItems)[number]) => (
+  const renderRightActions = (item: PaymentItem) => (
     <Pressable
       style={styles.payAction}
       onPress={() => handleMarkAsPaid(item.id)}
@@ -209,11 +219,9 @@ export default function PaymentsScreen() {
   const renderPaymentItem = ({
     item,
   }: {
-    item: (typeof paymentItems)[number];
+    item: PaymentItem;
   }) => {
-    const statusColor =
-      STATUS_COLORS[item.status as keyof typeof STATUS_COLORS] ||
-      STATUS_COLORS.none;
+    const statusColor = STATUS_COLORS[item.status];
 
     return (
       <Swipeable
