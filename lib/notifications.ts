@@ -34,9 +34,11 @@ export async function getStoredNotificationSettings(): Promise<StoredSettings> {
     const offsetVal = await SecureStore.getItemAsync(CLASS_REMINDER_OFFSET_KEY);
     const payVal = await SecureStore.getItemAsync(PAYMENT_REMINDERS_ENABLED_KEY);
 
+    const parsedOffset = offsetVal === null ? 30 : Number.parseInt(offsetVal, 10);
+
     return {
       notificationsEnabled: enabledVal === null ? true : enabledVal === 'true',
-      classReminderOffset: offsetVal === null ? 30 : parseInt(offsetVal, 10),
+      classReminderOffset: Number.isFinite(parsedOffset) ? parsedOffset : 30,
       paymentRemindersEnabled: payVal === null ? true : payVal === 'true',
     };
   } catch (error) {

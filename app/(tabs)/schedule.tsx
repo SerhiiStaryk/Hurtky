@@ -4,7 +4,6 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useThemeColor } from '@/hooks/use-theme-color';
 import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs } from '@/hooks/useClubs';
-import { isClubOnVacation } from '@/lib/notifications';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import {
@@ -29,21 +28,20 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
-const START_HOUR = 8;
-const END_HOUR = 21;
-const TIME_LABELS = Array.from(
-  { length: (END_HOUR - START_HOUR) * 2 + 1 },
-  (_, index) => {
-    const totalMinutes = START_HOUR * 60 + index * 30;
-    const hours = Math.floor(totalMinutes / 60);
-    const minutes = totalMinutes % 60;
-    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-  },
-);
+const TIME_LABELS = [
+  '08:00',
+  '10:00',
+  '12:00',
+  '14:00',
+  '16:00',
+  '18:00',
+  '20:00',
+];
 
 const HOUR_HEIGHT = 60;
 const HEADER_HEIGHT = 60;
-const GRID_HEIGHT = (END_HOUR - START_HOUR) * HOUR_HEIGHT;
+const START_HOUR = 8;
+const GRID_HEIGHT = (21 - START_HOUR) * HOUR_HEIGHT;
 
 function hexToRgba(hex: string, alpha = 0.9) {
   const normalized = hex.replace('#', '');
@@ -87,9 +85,6 @@ function capitalize(value: string) {
 export default function ScheduleScreen() {
   const router = useRouter();
   const horizontalScrollRef = useRef<ScrollView>(null);
-  const listScrollRef = useRef<ScrollView>(null);
-  const sectionPositionsRef = useRef<Record<number, number>>({});
-  const pendingScrollToDayRef = useRef<number | null>(null);
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
@@ -103,6 +98,10 @@ export default function ScheduleScreen() {
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
+  const weekButtonBg = useThemeColor(
+    { light: '#F2F2F7', dark: '#2C2C2E' },
+    'background',
+  );
   const todayColumnBg = useThemeColor(
     { light: '#FFF7E6', dark: '#2C2410' },
     'background',
@@ -151,7 +150,6 @@ export default function ScheduleScreen() {
         childId: number;
         startTime: string;
         endTime: string;
-        isVacation?: boolean;
       }[]
     >();
 
@@ -160,11 +158,6 @@ export default function ScheduleScreen() {
     }
 
     for (const club of allClubs) {
-      const onVacation = isClubOnVacation({
-        is_vacation: club.is_vacation,
-        vacation_end_date: club.vacation_end_date,
-      });
-
       for (const schedule of club.schedules) {
         buckets.get(schedule.day_of_week)?.push({
           clubId: club.id,
@@ -174,7 +167,6 @@ export default function ScheduleScreen() {
           childId: club.child_id,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
-          isVacation: onVacation,
         });
       }
     }
@@ -295,34 +287,19 @@ export default function ScheduleScreen() {
 
     const top = (startOffset / 60) * HOUR_HEIGHT;
     const duration = (endMins - startMins) / 60;
-    const height = Math.max(duration * HOUR_HEIGHT - 6, HOUR_HEIGHT / 2); // min height = 30 min slot
+    const height = Math.max(duration * HOUR_HEIGHT, 70); // min height for readability
 
     return {
       top,
-      height,
+      height: height - 6, // margin between blocks
     };
   };
 
-  const scrollToToday = useCallback(
-    (animated = false) => {
-      const now = new Date();
-      if (viewType === 'grid') {
-        const dayIndex = getISODay(now) - 1;
-        horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
-        pendingScrollToDayRef.current = null;
-      } else {
-        const isoDay = getISODay(now);
-        const y = sectionPositionsRef.current[isoDay];
-        if (y !== undefined) {
-          listScrollRef.current?.scrollTo({ y, animated });
-          pendingScrollToDayRef.current = null;
-        } else {
-          pendingScrollToDayRef.current = isoDay;
-        }
-      }
-    },
-    [viewType],
-  );
+  const scrollToToday = useCallback((animated = false) => {
+    const now = new Date();
+    const dayIndex = getISODay(now) - 1;
+    horizontalScrollRef.current?.scrollTo({ x: dayIndex * 140, animated });
+  }, []);
 
   const goToToday = () => {
     const now = new Date();
@@ -363,7 +340,7 @@ export default function ScheduleScreen() {
                 <ThemedText
                   style={[styles.timeLabel, { color: mutedTextColor }]}
                 >
-                  {label.endsWith(':00') ? label : ' '}
+                  {label}
                 </ThemedText>
               </View>
             ))}
@@ -435,7 +412,7 @@ export default function ScheduleScreen() {
                           item.endTime,
                         );
                         const blockTextColor = getContrastingTextColor(
-                          item.isVacation ? '#6b7280' : item.colorHex,
+                          item.colorHex,
                         );
 
                         return (
@@ -444,14 +421,8 @@ export default function ScheduleScreen() {
                             style={({ pressed }) => [
                               styles.scheduleBlock,
                               {
-                                backgroundColor: item.isVacation
-                                  ? '#9ca3af'
-                                  : hexToRgba(item.colorHex, 0.9),
-                                opacity: item.isVacation
-                                  ? 0.5
-                                  : pressed
-                                    ? 0.9
-                                    : 1,
+                                backgroundColor: hexToRgba(item.colorHex, 0.9),
+                                opacity: pressed ? 0.9 : 1,
                                 top: blockStyle.top,
                                 height: blockStyle.height,
                                 left: `${leftPercent}%`,
@@ -478,14 +449,10 @@ export default function ScheduleScreen() {
                                 style={[
                                   styles.blockTitle,
                                   { color: blockTextColor },
-                                  item.isVacation && {
-                                    textDecorationLine: 'line-through',
-                                    opacity: 0.8,
-                                  },
                                 ]}
                                 numberOfLines={1}
                               >
-                                {item.clubName} {item.isVacation ? '✈️' : ''}
+                                {item.clubName}
                               </ThemedText>
                             </View>
                             <View>
@@ -515,7 +482,6 @@ export default function ScheduleScreen() {
 
   const renderListView = () => (
     <ScrollView
-      ref={listScrollRef}
       style={styles.listContainer}
       showsVerticalScrollIndicator={false}
     >
@@ -528,19 +494,7 @@ export default function ScheduleScreen() {
         if (items.length === 0) return null;
 
         return (
-          <View
-            key={label}
-            style={styles.listSection}
-            onLayout={(event) => {
-              const y = event.nativeEvent.layout.y;
-              sectionPositionsRef.current[isoDay] = y;
-
-              if (pendingScrollToDayRef.current === isoDay) {
-                listScrollRef.current?.scrollTo({ y, animated: true });
-                pendingScrollToDayRef.current = null;
-              }
-            }}
-          >
+          <View key={label} style={styles.listSection}>
             <View style={styles.listDayHeaderRow}>
               <ThemedText
                 style={[styles.listDayName, isToday && { color: tintColor }]}
@@ -557,15 +511,9 @@ export default function ScheduleScreen() {
                 style={({ pressed }) => [
                   styles.listItem,
                   {
-                    backgroundColor: item.isVacation
-                      ? colorScheme === 'dark'
-                        ? '#1f2937'
-                        : '#f3f4f6'
-                      : hexToRgba(item.colorHex, 0.12),
-                    borderLeftColor: item.isVacation
-                      ? '#9ca3af'
-                      : item.colorHex,
-                    opacity: item.isVacation ? 0.6 : pressed ? 0.7 : 1,
+                    backgroundColor: hexToRgba(item.colorHex, 0.12),
+                    borderLeftColor: item.colorHex,
+                    opacity: pressed ? 0.7 : 1,
                   },
                 ]}
                 onPress={() =>
@@ -576,12 +524,7 @@ export default function ScheduleScreen() {
                 }
               >
                 <View style={styles.listItemTimeCol}>
-                  <ThemedText
-                    style={[
-                      styles.listItemStartTime,
-                      item.isVacation && { color: '#9ca3af' },
-                    ]}
-                  >
+                  <ThemedText style={styles.listItemStartTime}>
                     {item.startTime}
                   </ThemedText>
                   <ThemedText
@@ -595,17 +538,8 @@ export default function ScheduleScreen() {
                     <ThemedText style={styles.listItemEmoji}>
                       {item.clubEmoji}
                     </ThemedText>
-                    <ThemedText
-                      style={[
-                        styles.listItemTitle,
-                        item.isVacation && {
-                          textDecorationLine: 'line-through',
-                          color: '#9ca3af',
-                        },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {item.clubName} {item.isVacation ? '(канікули)' : ''}
+                    <ThemedText style={styles.listItemTitle} numberOfLines={1}>
+                      {item.clubName}
                     </ThemedText>
                   </View>
                   <ThemedText
@@ -664,7 +598,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() => setWeekStart((prev) => addWeeks(prev, -1))}
           >
@@ -675,7 +609,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.todayButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={goToToday}
           >
@@ -686,7 +620,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.navButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() => setWeekStart((prev) => addWeeks(prev, 1))}
           >
@@ -699,7 +633,7 @@ export default function ScheduleScreen() {
             style={({ pressed }) => [
               styles.viewToggleButton,
               { backgroundColor: colors.surface },
-              pressed && styles.weekButtonPressed,
+              pressed && { backgroundColor: weekButtonBg },
             ]}
             onPress={() =>
               setViewType((prev) => (prev === 'grid' ? 'list' : 'grid'))
@@ -892,7 +826,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   timeAxisRow: {
-    height: HOUR_HEIGHT / 2,
+    height: HOUR_HEIGHT * 2,
     justifyContent: 'flex-start',
     alignItems: 'flex-end',
     paddingRight: 8,
@@ -931,6 +865,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  todayHeader: {},
   dayName: {
     fontSize: 12,
     fontWeight: '700',

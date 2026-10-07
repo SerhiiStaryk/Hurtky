@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import * as ImagePicker from 'expo-image-picker';
 import { useEffect, useState } from 'react';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import {
   Image,
   KeyboardAvoidingView,
@@ -69,9 +69,9 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
   const inputBackground = colorScheme === 'dark' ? '#111827' : '#f9fafb';
   const placeholderColor = colorScheme === 'dark' ? '#9ca3af' : '#6b7280';
   const {
+    control,
     setValue,
     handleSubmit,
-    watch,
     reset,
     formState: { errors },
   } = useForm<ChildFormValues>({
@@ -86,7 +86,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
     }
   }, [defaultValues, reset]);
 
-  const currentValues = watch();
+  const currentValues = (useWatch({ control }) ?? initialValues) as ChildFormValues;
 
   const handleImagePicker = async () => {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -187,7 +187,7 @@ export default function ChildForm({ defaultValues, onSubmit, submitLabel, isLoad
                 borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb',
               },
             ]}
-            value={currentValues.notes}
+            value={currentValues.notes ?? ''}
             onChangeText={text => setValue('notes', text)}
             placeholder='Додаткові нотатки'
             placeholderTextColor={placeholderColor}

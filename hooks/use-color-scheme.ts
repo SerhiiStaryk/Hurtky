@@ -1,6 +1,6 @@
 import { ThemeMode, useAppStore } from '@/store/useAppStore';
 import * as SecureStore from 'expo-secure-store';
-import { ColorSchemeName, useColorScheme as useRNColorScheme } from 'react-native';
+import { useColorScheme as useRNColorScheme } from 'react-native';
 
 const THEME_MODE_KEY = 'themeMode';
 
@@ -27,7 +27,7 @@ export async function setStoredThemeMode(mode: ThemeMode): Promise<void> {
 
 export { ThemeMode } from '@/store/useAppStore';
 
-export function useColorScheme(): ColorSchemeName {
+export function useColorScheme(): 'light' | 'dark' {
   const systemColorScheme = useRNColorScheme();
   const themeMode = useAppStore(state => state.themeMode);
 
@@ -35,5 +35,5 @@ export function useColorScheme(): ColorSchemeName {
     return themeMode;
   }
 
-  return systemColorScheme ?? 'light';
+  return systemColorScheme === 'dark' ? 'dark' : 'light';
 }

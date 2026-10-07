@@ -8,7 +8,7 @@ import { upsertSchedules } from '@/lib/repositories';
 import { rescheduleAllNotifications } from '@/lib/notifications';
 import { Picker } from '@react-native-picker/picker';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -22,23 +22,17 @@ export default function NewClubScreen() {
 
   const { data: children = [] } = useChildren();
   const [selectedChildId, setSelectedChildId] = useState<number>(clubOwnerId);
-
-  useEffect(() => {
-    if (clubOwnerId > 0) {
-      setSelectedChildId(clubOwnerId);
-    } else if (children.length > 0 && selectedChildId === 0) {
-      setSelectedChildId(children[0].id);
-    }
-  }, [clubOwnerId, children, selectedChildId]);
+  const effectiveSelectedChildId =
+    clubOwnerId > 0 ? clubOwnerId : selectedChildId > 0 ? selectedChildId : (children[0]?.id ?? 0);
 
   const handleSave = async (values: ClubFormValues) => {
-    if (selectedChildId <= 0) {
+    if (effectiveSelectedChildId <= 0) {
       alert('Будь ласка, оберіть дитину');
       return;
     }
 
     createClubMutation.mutate(
-      { ...values, child_id: selectedChildId },
+      { ...values, child_id: effectiveSelectedChildId },
       {
         onSuccess: async insertedClubId => {
           if (values.schedules.length > 0) {
@@ -60,7 +54,7 @@ export default function NewClubScreen() {
           <ThemedText style={styles.label}>Для кого створюємо гурток?</ThemedText>
           <View style={[styles.pickerWrapper, { borderColor: colorScheme === 'dark' ? '#374151' : '#e5e7eb' }]}>
             <Picker
-              selectedValue={selectedChildId}
+              selectedValue={effectiveSelectedChildId}
               onValueChange={itemValue => setSelectedChildId(itemValue)}
               dropdownIconColor={themeColors.tint}
               style={{ color: themeColors.text }}

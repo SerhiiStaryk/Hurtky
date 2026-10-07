@@ -6,16 +6,18 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const activeTintColor =
+    colorScheme === 'dark' ? Colors.dark.tint : Colors.light.tint;
 
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: activeTintColor,
       }}
     >
       <Tabs.Screen
-        name='index'
+        name="index"
         options={{
           title: 'Головна',
           tabBarIcon: ({ focused, color, size }) => (
@@ -28,7 +30,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name='schedule'
+        name="schedule"
         options={{
           title: 'Розклад',
           tabBarIcon: ({ focused, color, size }) => (
@@ -41,7 +43,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name='payments'
+        name="payments"
         options={{
           title: 'Платежі',
           tabBarIcon: ({ focused, color, size }) => (
@@ -54,7 +56,7 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name='settings'
+        name="settings"
         options={{
           title: 'Налаштування',
           tabBarIcon: ({ focused, color, size }) => (
