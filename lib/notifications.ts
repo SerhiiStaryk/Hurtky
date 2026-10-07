@@ -1,7 +1,7 @@
 import * as Notifications from 'expo-notifications';
 import * as SecureStore from 'expo-secure-store';
 import { Platform } from 'react-native';
-import { getAllClubsWithSchedules, getChildren } from './repositories';
+import { getAllClubsWithSchedules, getChildren, Club } from './repositories';
 
 // Configure the foreground notifications handler
 Notifications.setNotificationHandler({
@@ -159,6 +159,24 @@ function calculateReminderTime(dayOfWeek: number, startTime: string, offsetMinut
 }
 
 /**
+ * Helper to determine if a club is currently on vacation mode.
+ */
+export function isClubOnVacation(club: { is_vacation?: number; vacation_end_date?: string | null }): boolean {
+  if (!club.is_vacation) return false;
+  if (!club.vacation_end_date) return true; // on vacation indefinitely
+
+  const endDatePart = club.vacation_end_date.substring(0, 10); // "YYYY-MM-DD"
+  
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  const todayStr = `${year}-${month}-${day}`; // local date in "YYYY-MM-DD" format
+
+  return todayStr < endDatePart;
+}
+
+/**
  * Cancels all scheduled notifications and reschedules them based on database contents
  */
 export async function rescheduleAllNotifications(): Promise<void> {
@@ -186,6 +204,11 @@ export async function rescheduleAllNotifications(): Promise<void> {
 
     // 4. Schedule notifications for each club
     for (const club of clubs) {
+      if (isClubOnVacation(club)) {
+        console.log(`Skipping notifications for club ${club.name} because it is currently on vacation.`);
+        continue;
+      }
+
       const childName = childMap.get(club.child_id) || 'Дитина';
 
       // A. Class reminders

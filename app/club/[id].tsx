@@ -1,13 +1,36 @@
 import { Ionicons } from '@expo/vector-icons';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import * as Clipboard from 'expo-clipboard';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  Animated,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  View,
+} from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { Colors, Fonts } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
-import { useClub, useDeleteClub, useMarkAsPaid } from '@/hooks/useClubs';
+import {
+  useClub,
+  useDeleteClub,
+  useMarkAsPaid,
+  useUpdateClub,
+} from '@/hooks/useClubs';
 import { getPlural } from '@/lib/i18n';
 import { saveTextFile } from '@/lib/share';
 
@@ -55,6 +78,73 @@ export default function ClubDetailScreen() {
   const { data: club, isLoading } = useClub(clubId);
   const deleteClubMutation = useDeleteClub();
   const markAsPaidMutation = useMarkAsPaid();
+  const updateClubMutation = useUpdateClub(clubId);
+
+  const [showVacationDatePicker, setShowVacationDatePicker] = useState(false);
+
+  const parseLocalDate = (dateStr: string) => {
+    const [year, month, day] = dateStr.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  };
+
+  const handleToggleVacation = useCallback(
+    (value: boolean) => {
+      if (!club) return;
+      updateClubMutation.mutate(
+        {
+          is_vacation: value ? 1 : 0,
+          vacation_end_date: null,
+        },
+        {
+          onError: (err) => {
+            Alert.alert('Помилка', 'Не вдалося оновити режим канікул');
+            console.error(err);
+          },
+        },
+      );
+    },
+    [club, updateClubMutation],
+  );
+
+  const handleClearVacationDate = useCallback(() => {
+    if (!club) return;
+    updateClubMutation.mutate(
+      {
+        vacation_end_date: null,
+      },
+      {
+        onError: (err) => {
+          Alert.alert('Помилка', 'Не вдалося очистити дату канікул');
+          console.error(err);
+        },
+      },
+    );
+  }, [club, updateClubMutation]);
+
+  const handleVacationDateChange = useCallback(
+    (_: any, selectedDate?: Date) => {
+      setShowVacationDatePicker(false);
+      if (!selectedDate || !club) return;
+
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const dateStr = `${year}-${month}-${day}`;
+
+      updateClubMutation.mutate(
+        {
+          vacation_end_date: dateStr,
+        },
+        {
+          onError: (err) => {
+            Alert.alert('Помилка', 'Не вдалося встановити дату канікул');
+            console.error(err);
+          },
+        },
+      );
+    },
+    [club, updateClubMutation],
+  );
 
   const copyScale = useRef(new Animated.Value(0)).current;
   const [copiedMessage, setCopiedMessage] = useState<string | null>(null);
@@ -85,23 +175,21 @@ export default function ClubDetailScreen() {
         <View style={styles.headerActions}>
           <Pressable
             style={styles.headerActionButton}
-            onPress={() => club && router.push({ pathname: '/club/[id]/edit', params: { id: club.id.toString() } })}
+            onPress={() =>
+              club &&
+              router.push({
+                pathname: '/club/[id]/edit',
+                params: { id: club.id.toString() },
+              })
+            }
           >
-            <Ionicons
-              name='pencil'
-              size={22}
-              color={colors.tint}
-            />
+            <Ionicons name="pencil" size={22} color={colors.tint} />
           </Pressable>
           <Pressable
             style={styles.headerActionButton}
             onPress={handleDeleteClub}
           >
-            <Ionicons
-              name='trash'
-              size={22}
-              color='#ef4444'
-            />
+            <Ionicons name="trash" size={22} color="#ef4444" />
           </Pressable>
         </View>
       ),
@@ -134,7 +222,8 @@ export default function ClubDetailScreen() {
 
   const handlePaymentAction = (value: string, label: 'iban' | 'card') => {
     const labelText = label === 'iban' ? 'IBAN' : 'картку';
-    const successMessage = label === 'iban' ? 'IBAN скопійовано!' : 'Картка скопійовано!';
+    const successMessage =
+      label === 'iban' ? 'IBAN скопійовано!' : 'Картка скопійовано!';
     const fileName = `hurtky-${label}-${new Date().toISOString().slice(0, 10)}.txt`;
 
     Alert.alert(
@@ -146,10 +235,19 @@ export default function ClubDetailScreen() {
           text: 'Зберегти у файл',
           onPress: async () => {
             try {
-              await saveTextFile(`${labelText}: ${value}`, fileName, `Зберегти ${labelText}`);
+              await saveTextFile(
+                `${labelText}: ${value}`,
+                fileName,
+                `Зберегти ${labelText}`,
+              );
               Alert.alert('Готово', `${labelText} збережено у файл`);
             } catch (error) {
-              Alert.alert('Помилка', error instanceof Error ? error.message : 'Не вдалося зберегти файл');
+              Alert.alert(
+                'Помилка',
+                error instanceof Error
+                  ? error.message
+                  : 'Не вдалося зберегти файл',
+              );
             }
           },
         },
@@ -175,21 +273,28 @@ export default function ClubDetailScreen() {
     today.setHours(0, 0, 0, 0);
     const nextDate = new Date(club.next_payment_date);
     nextDate.setHours(0, 0, 0, 0);
-    const diffDays = Math.ceil((nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+    const diffDays = Math.ceil(
+      (nextDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24),
+    );
 
     if (diffDays < 0) {
       return { label: 'Прострочено', color: '#dc2626' };
     }
 
     if (diffDays <= 7) {
-      return { label: `Наступні ${diffDays} ${getPlural(diffDays, 'день', 'дні', 'днів')}`, color: '#f59e0b' };
+      return {
+        label: `Наступні ${diffDays} ${getPlural(diffDays, 'день', 'дні', 'днів')}`,
+        color: '#f59e0b',
+      };
     }
 
     return { label: 'Вчасно', color: '#16a34a' };
   }, [club?.next_payment_date]);
 
   const copyFeedback = useMemo(
-    () => copiedMessage && `${copiedMessage === 'iban' ? 'IBAN' : 'Картка'} скопійовано!`,
+    () =>
+      copiedMessage &&
+      `${copiedMessage === 'iban' ? 'IBAN' : 'Картка'} скопійовано!`,
     [copiedMessage],
   );
 
@@ -204,10 +309,7 @@ export default function ClubDetailScreen() {
   if (isLoading) {
     return (
       <View style={[styles.screen, { backgroundColor: colors.background }]}>
-        <ActivityIndicator
-          size='large'
-          color={colors.tint}
-        />
+        <ActivityIndicator size="large" color={colors.tint} />
       </View>
     );
   }
@@ -226,37 +328,62 @@ export default function ClubDetailScreen() {
         <View style={styles.topRow}>
           <Pressable
             onPress={() => router.back()}
-            style={[styles.backIcon, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#eef2ff' }]}
+            style={[
+              styles.backIcon,
+              {
+                backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#eef2ff',
+              },
+            ]}
           >
-            <Ionicons
-              name='chevron-back'
-              size={24}
-              color={colors.tint}
-            />
+            <Ionicons name="chevron-back" size={24} color={colors.tint} />
           </Pressable>
           <View style={styles.clubInfo}>
-            <ThemedText style={[styles.emoji, { color: club.color_hex || colors.tint }]}>{club.emoji}</ThemedText>
+            <ThemedText
+              style={[styles.emoji, { color: club.color_hex || colors.tint }]}
+            >
+              {club.emoji}
+            </ThemedText>
             <ThemedText style={styles.clubName}>{club.name}</ThemedText>
-            {club.teacher_name ? <ThemedText style={styles.clubMeta}>Викладач: {club.teacher_name}</ThemedText> : null}
-            {club.location ? <ThemedText style={styles.clubMeta}>Місце: {club.location}</ThemedText> : null}
+            {club.teacher_name ? (
+              <ThemedText style={styles.clubMeta}>
+                Викладач: {club.teacher_name}
+              </ThemedText>
+            ) : null}
+            {club.location ? (
+              <ThemedText style={styles.clubMeta}>
+                Місце: {club.location}
+              </ThemedText>
+            ) : null}
           </View>
         </View>
 
-        <View style={[styles.card, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
-          <ThemedText
-            type='subtitle'
-            style={styles.cardTitle}
-          >
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' },
+          ]}
+        >
+          <ThemedText type="subtitle" style={styles.cardTitle}>
             Розклад
           </ThemedText>
           {club.schedules.length > 0 ? (
-            club.schedules.map(slot => (
-              <View
-                key={slot.id}
-                style={styles.scheduleRow}
-              >
-                <View style={[styles.dayChip, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#e0f2fe' }]}>
-                  <ThemedText style={[styles.dayChipText, { color: colorScheme === 'dark' ? '#cbd5e1' : '#0369a1' }]}>
+            club.schedules.map((slot) => (
+              <View key={slot.id} style={styles.scheduleRow}>
+                <View
+                  style={[
+                    styles.dayChip,
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#334155' : '#e0f2fe',
+                    },
+                  ]}
+                >
+                  <ThemedText
+                    style={[
+                      styles.dayChipText,
+                      { color: colorScheme === 'dark' ? '#cbd5e1' : '#0369a1' },
+                    ]}
+                  >
                     {dayNames[slot.day_of_week - 1]}
                   </ThemedText>
                 </View>
@@ -271,15 +398,19 @@ export default function ClubDetailScreen() {
               </View>
             ))
           ) : (
-            <ThemedText style={styles.emptyText}>Розклад ще не додано.</ThemedText>
+            <ThemedText style={styles.emptyText}>
+              Розклад ще не додано.
+            </ThemedText>
           )}
         </View>
 
-        <View style={[styles.card, { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' }]}>
-          <ThemedText
-            type='subtitle'
-            style={styles.cardTitle}
-          >
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' },
+          ]}
+        >
+          <ThemedText type="subtitle" style={styles.cardTitle}>
             Платіж
           </ThemedText>
 
@@ -290,20 +421,37 @@ export default function ClubDetailScreen() {
 
           <View style={styles.detailRow}>
             <ThemedText>Наступна оплата</ThemedText>
-            <View style={[styles.badge, { backgroundColor: paymentStatus.color }]}>
-              <ThemedText style={styles.badgeText}>{formatPaymentDate(club.next_payment_date)}</ThemedText>
+            <View
+              style={[styles.badge, { backgroundColor: paymentStatus.color }]}
+            >
+              <ThemedText style={styles.badgeText}>
+                {formatPaymentDate(club.next_payment_date)}
+              </ThemedText>
             </View>
           </View>
 
-          <View style={[styles.divider, { backgroundColor: colorScheme === 'dark' ? '#334155' : '#e2e8f0' }]} />
+          <View
+            style={[
+              styles.divider,
+              {
+                backgroundColor: colorScheme === 'dark' ? '#334155' : '#e2e8f0',
+              },
+            ]}
+          />
 
           <View style={styles.copySection}>
             <ThemedText style={styles.copyLabel}>IBAN</ThemedText>
             <View style={styles.copyRow}>
-              <ThemedText style={styles.monoText}>{club.payment_iban || '–'}</ThemedText>
+              <ThemedText style={styles.monoText}>
+                {club.payment_iban || '–'}
+              </ThemedText>
               <Pressable
                 style={styles.copyButton}
-                onPress={() => (club.payment_iban ? handlePaymentAction(club.payment_iban, 'iban') : null)}
+                onPress={() =>
+                  club.payment_iban
+                    ? handlePaymentAction(club.payment_iban, 'iban')
+                    : null
+                }
               >
                 <ThemedText style={styles.copyButtonText}>Дія</ThemedText>
               </Pressable>
@@ -313,10 +461,16 @@ export default function ClubDetailScreen() {
           <View style={styles.copySection}>
             <ThemedText style={styles.copyLabel}>Номер картки</ThemedText>
             <View style={styles.copyRow}>
-              <ThemedText style={styles.monoText}>{club.payment_card || '–'}</ThemedText>
+              <ThemedText style={styles.monoText}>
+                {club.payment_card || '–'}
+              </ThemedText>
               <Pressable
                 style={styles.copyButton}
-                onPress={() => (club.payment_card ? handlePaymentAction(club.payment_card, 'card') : null)}
+                onPress={() =>
+                  club.payment_card
+                    ? handlePaymentAction(club.payment_card, 'card')
+                    : null
+                }
               >
                 <ThemedText style={styles.copyButtonText}>Дія</ThemedText>
               </Pressable>
@@ -324,25 +478,124 @@ export default function ClubDetailScreen() {
           </View>
 
           {copyFeedback ? (
-            <Animated.View style={[styles.copyToast, { transform: [{ scale: copyScale }] }]}>
-              <Ionicons
-                name='checkmark-circle'
-                size={16}
-                color='#fff'
-              />
-              <ThemedText style={styles.copyToastText}>{copyFeedback}</ThemedText>
+            <Animated.View
+              style={[styles.copyToast, { transform: [{ scale: copyScale }] }]}
+            >
+              <Ionicons name="checkmark-circle" size={16} color="#fff" />
+              <ThemedText style={styles.copyToastText}>
+                {copyFeedback}
+              </ThemedText>
             </Animated.View>
           ) : null}
         </View>
 
+        <View
+          style={[
+            styles.card,
+            { backgroundColor: colorScheme === 'dark' ? '#1f2937' : '#fff' },
+          ]}
+        >
+          <View style={styles.cardHeaderRow}>
+            <View style={styles.cardTitleWithIcon}>
+              <Ionicons
+                name="airplane-outline"
+                size={20}
+                color={club.color_hex || colors.tint}
+                style={{ marginRight: 8 }}
+              />
+              <ThemedText type="subtitle" style={styles.cardTitleOverride}>
+                Режим канікул
+              </ThemedText>
+            </View>
+            <Switch
+              value={Boolean(club.is_vacation)}
+              onValueChange={handleToggleVacation}
+              trackColor={{
+                false: '#767577',
+                true: club.color_hex || colors.tint,
+              }}
+              thumbColor={Platform.OS === 'android' ? '#f4f3f4' : undefined}
+            />
+          </View>
+
+          <ThemedText style={styles.vacationDescription}>
+            Коли режим канікул активний, сповіщення для цього гуртка не
+            надходитимуть.
+          </ThemedText>
+
+          {club.is_vacation ? (
+            <View
+              style={[
+                styles.vacationDateSection,
+                {
+                  borderTopColor:
+                    colorScheme === 'dark' ? '#334155' : '#e2e8f0',
+                },
+              ]}
+            >
+              <ThemedText style={styles.vacationDateLabel}>
+                Канікули тривають до:
+              </ThemedText>
+              <View style={styles.vacationDateActions}>
+                <Pressable
+                  style={[
+                    styles.vacationDateInput,
+                    {
+                      backgroundColor:
+                        colorScheme === 'dark' ? '#111827' : '#f9fafb',
+                      borderColor:
+                        colorScheme === 'dark' ? '#374151' : '#e5e7eb',
+                    },
+                  ]}
+                  onPress={() => setShowVacationDatePicker(true)}
+                >
+                  <ThemedText style={{ color: colors.text }}>
+                    {club.vacation_end_date
+                      ? formatPaymentDate(club.vacation_end_date)
+                      : 'Доки не вимкнено вручну'}
+                  </ThemedText>
+                </Pressable>
+
+                {club.vacation_end_date ? (
+                  <Pressable
+                    style={styles.clearVacationDateButton}
+                    onPress={handleClearVacationDate}
+                  >
+                    <Ionicons name="close-circle" size={22} color="#ef4444" />
+                  </Pressable>
+                ) : null}
+              </View>
+            </View>
+          ) : null}
+        </View>
+
         <Pressable
-          style={[styles.payButton, markAsPaidMutation.isPending && styles.disabledButton]}
+          style={[
+            styles.payButton,
+            markAsPaidMutation.isPending && styles.disabledButton,
+          ]}
           disabled={markAsPaidMutation.isPending}
           onPress={() => markAsPaidMutation.mutate({ clubId: club.id })}
         >
-          <ThemedText style={styles.payButtonText}>Позначити як оплачено</ThemedText>
+          <ThemedText style={styles.payButtonText}>
+            Позначити як оплачено
+          </ThemedText>
         </Pressable>
       </ScrollView>
+
+      {showVacationDatePicker && (
+        <DateTimePicker
+          mode="date"
+          value={
+            club.vacation_end_date
+              ? parseLocalDate(club.vacation_end_date)
+              : new Date()
+          }
+          display={Platform.OS === 'ios' ? 'inline' : 'default'}
+          onChange={handleVacationDateChange}
+          minimumDate={new Date()}
+        />
+      )}
     </View>
   );
 }
@@ -381,7 +634,7 @@ const styles = StyleSheet.create({
   },
   emoji: {
     fontSize: 40,
-    lineHeight: 48,
+    lineHeight: 40,
     textAlign: 'center',
     includeFontPadding: false,
     marginBottom: 10,
@@ -528,5 +781,51 @@ const styles = StyleSheet.create({
     color: '#dc2626',
     textAlign: 'center',
     marginTop: 30,
+  },
+  cardHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  cardTitleWithIcon: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardTitleOverride: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  vacationDescription: {
+    fontSize: 14,
+    opacity: 0.6,
+    marginBottom: 12,
+    lineHeight: 20,
+  },
+  vacationDateSection: {
+    marginTop: 8,
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
+  vacationDateLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
+  vacationDateActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  vacationDateInput: {
+    flex: 1,
+    borderRadius: 12,
+    borderWidth: 1,
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    justifyContent: 'center',
+  },
+  clearVacationDateButton: {
+    padding: 8,
+    marginLeft: 8,
   },
 });
