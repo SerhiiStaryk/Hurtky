@@ -5,12 +5,22 @@ import { Colors } from '@/constants/theme';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { useChildren } from '@/hooks/useChildren';
 import { getPlural } from '@/lib/i18n';
-import { getClubsByChildIds, getUpcomingLessonsForDays } from '@/lib/repositories';
+import {
+  getClubsByChildIds,
+  getUpcomingLessonsForDays,
+} from '@/lib/repositories';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import React, { useEffect, useState } from 'react';
-import { isClubOnVacation } from '@/lib/notifications';
-import { ActivityIndicator, Alert, FlatList, Platform, Pressable, StyleSheet, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import {
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 interface UpcomingLesson {
@@ -22,8 +32,6 @@ interface UpcomingLesson {
   endTime: string;
   dayLabel: string;
   colorHex: string;
-  isVacation?: boolean;
-  clubId: string;
 }
 
 export default function HomeScreen() {
@@ -31,14 +39,16 @@ export default function HomeScreen() {
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
   const { data: children = [], isLoading } = useChildren();
-  const [childrenWithClubs, setChildrenWithClubs] = useState<Map<number, any>>(new Map());
+  const [childrenWithClubs, setChildrenWithClubs] = useState<Map<number, any>>(
+    new Map(),
+  );
   const [upcomingLessons, setUpcomingLessons] = useState<UpcomingLesson[]>([]);
 
   // Fetch clubs count for each child and upcoming lessons
   useEffect(() => {
     const loadChildrenData = async () => {
       try {
-        const childIds = children.map(child => child.id);
+        const childIds = children.map((child) => child.id);
         const clubsMap = await getClubsByChildIds(childIds);
         setChildrenWithClubs(clubsMap);
 
@@ -47,19 +57,19 @@ export default function HomeScreen() {
         const todayDay = todayDayOfWeek === 0 ? 7 : todayDayOfWeek;
         const tomorrowDay = todayDay === 7 ? 1 : todayDay + 1;
 
-        const scheduleRows = await getUpcomingLessonsForDays([todayDay, tomorrowDay]);
+        const scheduleRows = await getUpcomingLessonsForDays([
+          todayDay,
+          tomorrowDay,
+        ]);
 
         if (!scheduleRows || scheduleRows.length === 0) {
           setUpcomingLessons([]);
           return;
         }
 
-        const lessonsData: UpcomingLesson[] = scheduleRows.slice(0, 3).map(schedule => {
-          const onVacation = isClubOnVacation({
-            is_vacation: schedule.is_vacation,
-            vacation_end_date: schedule.vacation_end_date,
-          });
-          return {
+        const lessonsData: UpcomingLesson[] = scheduleRows
+          .slice(0, 3)
+          .map((schedule) => ({
             id: `${schedule.id}`,
             childName: schedule.child_name,
             clubName: schedule.club_name,
@@ -68,10 +78,7 @@ export default function HomeScreen() {
             endTime: schedule.end_time,
             dayLabel: schedule.day_of_week === todayDay ? 'Сьогодні' : 'Завтра',
             colorHex: schedule.color_hex,
-            isVacation: onVacation,
-            clubId: `${schedule.club_id}`,
-          };
-        });
+          }));
 
         setUpcomingLessons(lessonsData);
       } catch (err) {
@@ -92,11 +99,17 @@ export default function HomeScreen() {
     <View style={[styles.header]}>
       <View style={styles.headerTop}>
         <ThemedText style={styles.title}>
-          Мої <ThemedText style={[styles.title, { color: colors.tint }]}>діти</ThemedText>
+          Мої{' '}
+          <ThemedText style={[styles.title, { color: colors.tint }]}>
+            діти
+          </ThemedText>
         </ThemedText>
         <View style={{ flexDirection: 'row' }}>
           <Pressable
-            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1, marginRight: 8 }]}
+            style={({ pressed }) => [
+              styles.iconBtn,
+              { opacity: pressed ? 0.7 : 1, marginRight: 8 },
+            ]}
             onPress={() => {
               if (children.length >= 1) {
                 router.push('/club/new');
@@ -105,27 +118,24 @@ export default function HomeScreen() {
               }
             }}
           >
-            <Ionicons
-              name='school-outline'
-              size={20}
-              color={colors.tint}
-            />
+            <Ionicons name="school-outline" size={20} color={colors.tint} />
           </Pressable>
           <Pressable
-            style={({ pressed }) => [styles.iconBtn, { opacity: pressed ? 0.7 : 1 }]}
+            style={({ pressed }) => [
+              styles.iconBtn,
+              { opacity: pressed ? 0.7 : 1 },
+            ]}
             onPress={handleAddChild}
           >
-            <Ionicons
-              name='person-add-outline'
-              size={20}
-              color={colors.tint}
-            />
+            <Ionicons name="person-add-outline" size={20} color={colors.tint} />
           </Pressable>
         </View>
       </View>
       {children.length > 0 && (
         <ThemedText style={styles.childCount}>
-          {children.length} {getPlural(children.length, 'дитина', 'дитини', 'дітей')} · {upcomingLessons.length}{' '}
+          {children.length}{' '}
+          {getPlural(children.length, 'дитина', 'дитини', 'дітей')} ·{' '}
+          {upcomingLessons.length}{' '}
           {getPlural(upcomingLessons.length, 'заняття', 'заняття', 'занять')}
         </ThemedText>
       )}
@@ -135,12 +145,14 @@ export default function HomeScreen() {
   const renderEmptyState = () => (
     <View style={styles.emptyState}>
       <Ionicons
-        name='person-add-outline'
+        name="person-add-outline"
         size={64}
         color={colors.icon}
         style={{ marginBottom: 16 }}
       />
-      <ThemedText style={styles.emptyStateText}>Додайте першу дитину</ThemedText>
+      <ThemedText style={styles.emptyStateText}>
+        Додайте першу дитину
+      </ThemedText>
       <Pressable
         style={({ pressed }) => [
           styles.emptyStateButton,
@@ -151,7 +163,12 @@ export default function HomeScreen() {
         ]}
         onPress={handleAddChild}
       >
-        <ThemedText style={{ color: colorScheme === 'dark' ? 'black' : '#fff', fontWeight: '600' }}>
+        <ThemedText
+          style={{
+            color: colorScheme === 'dark' ? 'black' : '#fff',
+            fontWeight: '600',
+          }}
+        >
           Додати дитину
         </ThemedText>
       </Pressable>
@@ -165,16 +182,15 @@ export default function HomeScreen() {
         styles.lessonCard,
         {
           backgroundColor: colors.surface,
-          borderLeftColor: lesson.isVacation ? '#9ca3af' : lesson.colorHex,
-          opacity: lesson.isVacation ? 0.6 : (pressed ? 0.9 : 1),
+          borderLeftColor: lesson.colorHex,
+          opacity: pressed ? 0.9 : 1,
         },
       ]}
-      onPress={() => router.push({ pathname: '/club/[id]', params: { id: lesson.clubId } })}
     >
       <View style={styles.lessonContent}>
         <View style={styles.lessonInfo}>
-          <ThemedText style={[styles.lessonClub, lesson.isVacation && { textDecorationLine: 'line-through', color: '#9ca3af' }]}>
-            {lesson.clubEmoji} {lesson.clubName} {lesson.isVacation ? '(канікули)' : ''}
+          <ThemedText style={styles.lessonClub}>
+            {lesson.clubEmoji} {lesson.clubName}
           </ThemedText>
           <ThemedText style={styles.lessonTime}>
             {lesson.dayLabel} · {lesson.startTime}–{lesson.endTime}
@@ -183,16 +199,26 @@ export default function HomeScreen() {
         <View
           style={[
             styles.dayBadge,
-            { backgroundColor: lesson.isVacation ? (colorScheme === 'dark' ? '#374151' : '#f3f4f6') : (lesson.dayLabel === 'Сьогодні' ? colors.tint + '15' : colors.border + '50') },
+            {
+              backgroundColor:
+                lesson.dayLabel === 'Сьогодні'
+                  ? colors.tint + '15'
+                  : colors.border + '50',
+            },
           ]}
         >
           <ThemedText
             style={[
               styles.dayBadgeText,
-              { color: lesson.isVacation ? '#9ca3af' : (lesson.dayLabel === 'Сьогодні' ? colors.tint : colors.text + '80') }
+              {
+                color:
+                  lesson.dayLabel === 'Сьогодні'
+                    ? colors.tint
+                    : colors.text + '80',
+              },
             ]}
           >
-            {lesson.isVacation ? 'Канікули' : lesson.dayLabel}
+            {lesson.dayLabel}
           </ThemedText>
         </View>
       </View>
@@ -205,9 +231,16 @@ export default function HomeScreen() {
     }
 
     return (
-      <View style={[styles.sectionContainer, { backgroundColor: colors.background }]}>
+      <View
+        style={[
+          styles.sectionContainer,
+          { backgroundColor: colors.background },
+        ]}
+      >
         <ThemedText style={styles.sectionTitle}>Найближчі заняття</ThemedText>
-        <View style={styles.lessonsContainer}>{upcomingLessons.map(renderUpcomingLesson)}</View>
+        <View style={styles.lessonsContainer}>
+          {upcomingLessons.map(renderUpcomingLesson)}
+        </View>
       </View>
     );
   };
@@ -216,10 +249,7 @@ export default function HomeScreen() {
     return (
       <ThemedView style={styles.container}>
         <SafeAreaView style={styles.centerContainer}>
-          <ActivityIndicator
-            size='large'
-            color={colors.tint}
-          />
+          <ActivityIndicator size="large" color={colors.tint} />
         </SafeAreaView>
       </ThemedView>
     );
@@ -241,7 +271,7 @@ export default function HomeScreen() {
       <SafeAreaView style={styles.safeArea}>
         <FlatList
           data={children}
-          keyExtractor={item => item.id.toString()}
+          keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => {
             const clubs = childrenWithClubs.get(item.id) || [];
             const clubColor = clubs.length > 0 ? clubs[0].color_hex : '#0a7ea4';

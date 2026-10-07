@@ -6,23 +6,39 @@ import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs } from '@/hooks/useClubs';
 import { Ionicons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
-import { addDays, addWeeks, endOfWeek, format, getISODay, isSameDay, startOfWeek } from 'date-fns';
+import {
+  addDays,
+  addWeeks,
+  endOfWeek,
+  format,
+  getISODay,
+  isSameDay,
+  startOfWeek,
+} from 'date-fns';
 import { uk } from 'date-fns/locale';
 import { useRouter } from 'expo-router';
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { isClubOnVacation } from '@/lib/notifications';
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const DAY_LABELS = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Нд'];
 const START_HOUR = 8;
 const END_HOUR = 21;
-const TIME_LABELS = Array.from({ length: (END_HOUR - START_HOUR) * 2 + 1 }, (_, index) => {
-  const totalMinutes = START_HOUR * 60 + index * 30;
-  const hours = Math.floor(totalMinutes / 60);
-  const minutes = totalMinutes % 60;
-  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
-});
+const TIME_LABELS = Array.from(
+  { length: (END_HOUR - START_HOUR) * 2 + 1 },
+  (_, index) => {
+    const totalMinutes = START_HOUR * 60 + index * 30;
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  },
+);
 
 const HOUR_HEIGHT = 60;
 const HEADER_HEIGHT = 60;
@@ -34,7 +50,7 @@ function hexToRgba(hex: string, alpha = 0.9) {
     normalized.length === 3
       ? normalized
           .split('')
-          .map(c => c + c)
+          .map((c) => c + c)
           .join('')
       : normalized;
 
@@ -51,7 +67,7 @@ function getContrastingTextColor(hex: string) {
     normalized.length === 3
       ? normalized
           .split('')
-          .map(c => c + c)
+          .map((c) => c + c)
           .join('')
       : normalized;
 
@@ -78,18 +94,38 @@ export default function ScheduleScreen() {
   const [viewType, setViewType] = useState<'grid' | 'list'>('grid');
   const { data: allClubs = [], isLoading: isClubsLoading } = useAllClubs();
   const { data: children = [], isLoading: isChildrenLoading } = useChildren();
-  const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date(), { weekStartsOn: 1 }));
+  const [weekStart, setWeekStart] = useState(() =>
+    startOfWeek(new Date(), { weekStartsOn: 1 }),
+  );
 
   const weekEnd = endOfWeek(weekStart, { weekStartsOn: 1 });
 
   const backgroundColor = useThemeColor({}, 'background');
   const tintColor = useThemeColor({}, 'tint');
-  const todayColumnBg = useThemeColor({ light: '#FFF7E6', dark: '#2C2410' }, 'background');
-  const dayHeaderBg = useThemeColor({ light: '#F3F4F6', dark: '#2C2C2E' }, 'background');
-  const todayHeaderBg = useThemeColor({ light: '#FEF3C7', dark: '#3D331A' }, 'background');
-  const legendChipBg = useThemeColor({ light: '#F8FAFC', dark: '#2C2C2E' }, 'background');
-  const mutedTextColor = useThemeColor({ light: '#6B7280', dark: '#9CA3AF' }, 'text');
-  const blockChildColor = useThemeColor({ light: '#4B5563', dark: '#9CA3AF' }, 'text');
+  const todayColumnBg = useThemeColor(
+    { light: '#FFF7E6', dark: '#2C2410' },
+    'background',
+  );
+  const dayHeaderBg = useThemeColor(
+    { light: '#F3F4F6', dark: '#2C2C2E' },
+    'background',
+  );
+  const todayHeaderBg = useThemeColor(
+    { light: '#FEF3C7', dark: '#3D331A' },
+    'background',
+  );
+  const legendChipBg = useThemeColor(
+    { light: '#F8FAFC', dark: '#2C2C2E' },
+    'background',
+  );
+  const mutedTextColor = useThemeColor(
+    { light: '#6B7280', dark: '#9CA3AF' },
+    'text',
+  );
+  const blockChildColor = useThemeColor(
+    { light: '#4B5563', dark: '#9CA3AF' },
+    'text',
+  );
 
   const weekLabel = useMemo(() => {
     const startDay = format(weekStart, 'd', { locale: uk });
@@ -98,7 +134,10 @@ export default function ScheduleScreen() {
     return `${startDay}–${endDay} ${monthName}`;
   }, [weekEnd, weekStart]);
 
-  const childMap = useMemo(() => new Map(children.map(child => [child.id, child.name])), [children]);
+  const childMap = useMemo(
+    () => new Map(children.map((child) => [child.id, child.name])),
+    [children],
+  );
 
   const scheduleItemsByDay = useMemo(() => {
     const buckets = new Map<
@@ -111,7 +150,6 @@ export default function ScheduleScreen() {
         childId: number;
         startTime: string;
         endTime: string;
-        isVacation?: boolean;
       }[]
     >();
 
@@ -120,11 +158,6 @@ export default function ScheduleScreen() {
     }
 
     for (const club of allClubs) {
-      const onVacation = isClubOnVacation({
-        is_vacation: club.is_vacation,
-        vacation_end_date: club.vacation_end_date,
-      });
-
       for (const schedule of club.schedules) {
         buckets.get(schedule.day_of_week)?.push({
           clubId: club.id,
@@ -134,7 +167,6 @@ export default function ScheduleScreen() {
           childId: club.child_id,
           startTime: schedule.start_time,
           endTime: schedule.end_time,
-          isVacation: onVacation,
         });
       }
     }
@@ -147,7 +179,10 @@ export default function ScheduleScreen() {
   }, [allClubs]);
 
   const childLegend = useMemo(() => {
-    const entries = new Map<number, { id: number; name: string; color: string }>();
+    const entries = new Map<
+      number,
+      { id: number; name: string; color: string }
+    >();
 
     for (const club of allClubs) {
       if (!entries.has(club.child_id)) {
@@ -181,7 +216,9 @@ export default function ScheduleScreen() {
       }))
       .sort((a, b) => a.start - b.start || a.end - b.end);
 
-    const assignments: { col: number; totalCols: number }[] = Array(items.length).fill({ col: 0, totalCols: 1 });
+    const assignments: { col: number; totalCols: number }[] = Array(
+      items.length,
+    ).fill({ col: 0, totalCols: 1 });
 
     // Build overlapping clusters
     let cluster: Event[] = [];
@@ -313,12 +350,11 @@ export default function ScheduleScreen() {
             <ThemedText style={styles.axisHeaderText}>Час</ThemedText>
           </View>
           <View style={styles.timeAxisContent}>
-            {TIME_LABELS.map(label => (
-              <View
-                key={label}
-                style={styles.timeAxisRow}
-              >
-                <ThemedText style={[styles.timeLabel, { color: mutedTextColor }]}>
+            {TIME_LABELS.map((label) => (
+              <View key={label} style={styles.timeAxisRow}>
+                <ThemedText
+                  style={[styles.timeLabel, { color: mutedTextColor }]}
+                >
                   {label.endsWith(':00') ? label : ' '}
                 </ThemedText>
               </View>
@@ -341,7 +377,13 @@ export default function ScheduleScreen() {
               return (
                 <View
                   key={label}
-                  style={[styles.column, isToday && { backgroundColor: todayColumnBg, borderRadius: 12 }]}
+                  style={[
+                    styles.column,
+                    isToday && {
+                      backgroundColor: todayColumnBg,
+                      borderRadius: 12,
+                    },
+                  ]}
                 >
                   <View
                     style={[
@@ -351,18 +393,22 @@ export default function ScheduleScreen() {
                     ]}
                   >
                     <ThemedText style={styles.dayName}>{label}</ThemedText>
-                    <ThemedText style={styles.dayDate}>{format(date, 'd', { locale: uk })}</ThemedText>
+                    <ThemedText style={styles.dayDate}>
+                      {format(date, 'd', { locale: uk })}
+                    </ThemedText>
                   </View>
 
                   <View style={styles.columnContent}>
                     {/* Grid Lines */}
-                    {TIME_LABELS.map(t => (
+                    {TIME_LABELS.map((t) => (
                       <View
                         key={t}
                         style={[
                           styles.gridLine,
                           {
-                            top: ((getTimeMinutes(t) - START_HOUR * 60) / 60) * HOUR_HEIGHT,
+                            top:
+                              ((getTimeMinutes(t) - START_HOUR * 60) / 60) *
+                              HOUR_HEIGHT,
                             borderTopColor: dayHeaderBg,
                           },
                         ]}
@@ -373,10 +419,16 @@ export default function ScheduleScreen() {
                       const layouts = computeLayouts(items);
                       return items.map((item, idx) => {
                         const layout = layouts[idx] ?? { col: 0, totalCols: 1 };
-                        const leftPercent = layout.col * (100 / layout.totalCols);
+                        const leftPercent =
+                          layout.col * (100 / layout.totalCols);
                         const widthPercent = 100 / layout.totalCols;
-                        const blockStyle = getBlockStyle(item.startTime, item.endTime);
-                        const blockTextColor = getContrastingTextColor(item.isVacation ? '#6b7280' : item.colorHex);
+                        const blockStyle = getBlockStyle(
+                          item.startTime,
+                          item.endTime,
+                        );
+                        const blockTextColor = getContrastingTextColor(
+                          item.colorHex,
+                        );
 
                         return (
                           <Pressable
@@ -384,8 +436,8 @@ export default function ScheduleScreen() {
                             style={({ pressed }) => [
                               styles.scheduleBlock,
                               {
-                                backgroundColor: item.isVacation ? '#9ca3af' : hexToRgba(item.colorHex, 0.9),
-                                opacity: item.isVacation ? 0.5 : (pressed ? 0.9 : 1),
+                                backgroundColor: hexToRgba(item.colorHex, 0.9),
+                                opacity: pressed ? 0.9 : 1,
                                 top: blockStyle.top,
                                 height: blockStyle.height,
                                 left: `${leftPercent}%`,
@@ -393,27 +445,37 @@ export default function ScheduleScreen() {
                               },
                             ]}
                             onPress={() =>
-                              router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })
+                              router.push({
+                                pathname: '/club/[id]',
+                                params: { id: item.clubId.toString() },
+                              })
                             }
                           >
                             <View style={styles.blockTitleRow}>
-                              <ThemedText style={[styles.blockEmoji, { color: blockTextColor }]}>
+                              <ThemedText
+                                style={[
+                                  styles.blockEmoji,
+                                  { color: blockTextColor },
+                                ]}
+                              >
                                 {item.clubEmoji}
                               </ThemedText>
                               <ThemedText
                                 style={[
                                   styles.blockTitle,
                                   { color: blockTextColor },
-                                  item.isVacation && { textDecorationLine: 'line-through', opacity: 0.8 }
                                 ]}
                                 numberOfLines={1}
                               >
-                                {item.clubName} {item.isVacation ? '✈️' : ''}
+                                {item.clubName}
                               </ThemedText>
                             </View>
                             <View>
                               <ThemedText
-                                style={[styles.blockChild, { color: blockTextColor }]}
+                                style={[
+                                  styles.blockChild,
+                                  { color: blockTextColor },
+                                ]}
                                 numberOfLines={1}
                               >
                                 {childMap.get(item.childId) ?? 'Дитина'}
@@ -451,7 +513,7 @@ export default function ScheduleScreen() {
           <View
             key={label}
             style={styles.listSection}
-            onLayout={event => {
+            onLayout={(event) => {
               const y = event.nativeEvent.layout.y;
               sectionPositionsRef.current[isoDay] = y;
 
@@ -462,34 +524,50 @@ export default function ScheduleScreen() {
             }}
           >
             <View style={styles.listDayHeaderRow}>
-              <ThemedText style={[styles.listDayName, isToday && { color: tintColor }]}>{label}</ThemedText>
-              <ThemedText style={styles.listDayDate}>{format(date, 'd MMMM', { locale: uk })}</ThemedText>
+              <ThemedText
+                style={[styles.listDayName, isToday && { color: tintColor }]}
+              >
+                {label}
+              </ThemedText>
+              <ThemedText style={styles.listDayDate}>
+                {format(date, 'd MMMM', { locale: uk })}
+              </ThemedText>
             </View>
-            {items.map(item => (
+            {items.map((item) => (
               <Pressable
                 key={`${item.clubId}-${item.startTime}-${item.endTime}`}
                 style={({ pressed }) => [
                   styles.listItem,
                   {
-                    backgroundColor: item.isVacation ? (colorScheme === 'dark' ? '#1f2937' : '#f3f4f6') : hexToRgba(item.colorHex, 0.12),
-                    borderLeftColor: item.isVacation ? '#9ca3af' : item.colorHex,
-                    opacity: item.isVacation ? 0.6 : (pressed ? 0.7 : 1),
+                    backgroundColor: hexToRgba(item.colorHex, 0.12),
+                    borderLeftColor: item.colorHex,
+                    opacity: pressed ? 0.7 : 1,
                   },
                 ]}
-                onPress={() => router.push({ pathname: '/club/[id]', params: { id: item.clubId.toString() } })}
+                onPress={() =>
+                  router.push({
+                    pathname: '/club/[id]',
+                    params: { id: item.clubId.toString() },
+                  })
+                }
               >
                 <View style={styles.listItemTimeCol}>
-                  <ThemedText style={[styles.listItemStartTime, item.isVacation && { color: '#9ca3af' }]}>{item.startTime}</ThemedText>
-                  <ThemedText style={[styles.listItemEndTime, { color: mutedTextColor }]}>{item.endTime}</ThemedText>
+                  <ThemedText style={styles.listItemStartTime}>
+                    {item.startTime}
+                  </ThemedText>
+                  <ThemedText
+                    style={[styles.listItemEndTime, { color: mutedTextColor }]}
+                  >
+                    {item.endTime}
+                  </ThemedText>
                 </View>
                 <View style={styles.listItemContent}>
                   <View style={styles.listItemTitleRow}>
-                    <ThemedText style={styles.listItemEmoji}>{item.clubEmoji}</ThemedText>
-                    <ThemedText
-                      style={[styles.listItemTitle, item.isVacation && { textDecorationLine: 'line-through', color: '#9ca3af' }]}
-                      numberOfLines={1}
-                    >
-                      {item.clubName} {item.isVacation ? '(канікули)' : ''}
+                    <ThemedText style={styles.listItemEmoji}>
+                      {item.clubEmoji}
+                    </ThemedText>
+                    <ThemedText style={styles.listItemTitle} numberOfLines={1}>
+                      {item.clubName}
                     </ThemedText>
                   </View>
                   <ThemedText
@@ -500,7 +578,7 @@ export default function ScheduleScreen() {
                   </ThemedText>
                 </View>
                 <Ionicons
-                  name='chevron-forward'
+                  name="chevron-forward"
                   size={18}
                   color={mutedTextColor}
                 />
@@ -509,14 +587,18 @@ export default function ScheduleScreen() {
           </View>
         );
       })}
-      {Array.from(scheduleItemsByDay.values()).every(arr => arr.length === 0) && (
+      {Array.from(scheduleItemsByDay.values()).every(
+        (arr) => arr.length === 0,
+      ) && (
         <View style={styles.emptyWeek}>
-          <Ionicons
-            name='calendar-outline'
-            size={48}
-            color={mutedTextColor}
-          />
-          <ThemedText style={{ color: mutedTextColor, marginTop: 12, textAlign: 'center' }}>
+          <Ionicons name="calendar-outline" size={48} color={mutedTextColor} />
+          <ThemedText
+            style={{
+              color: mutedTextColor,
+              marginTop: 12,
+              textAlign: 'center',
+            }}
+          >
             На цьому тижні немає занять
           </ThemedText>
         </View>
@@ -530,10 +612,7 @@ export default function ScheduleScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.loadingContainer}>
-          <ActivityIndicator
-            size='large'
-            color={tintColor}
-          />
+          <ActivityIndicator size="large" color={tintColor} />
         </View>
       </SafeAreaView>
     );
@@ -549,13 +628,9 @@ export default function ScheduleScreen() {
               { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed,
             ]}
-            onPress={() => setWeekStart(prev => addWeeks(prev, -1))}
+            onPress={() => setWeekStart((prev) => addWeeks(prev, -1))}
           >
-            <Ionicons
-              name='chevron-back'
-              size={20}
-              color={colors.tint}
-            />
+            <Ionicons name="chevron-back" size={20} color={colors.tint} />
           </Pressable>
 
           <Pressable
@@ -575,13 +650,9 @@ export default function ScheduleScreen() {
               { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed,
             ]}
-            onPress={() => setWeekStart(prev => addWeeks(prev, 1))}
+            onPress={() => setWeekStart((prev) => addWeeks(prev, 1))}
           >
-            <Ionicons
-              name='chevron-forward'
-              size={20}
-              color={colors.tint}
-            />
+            <Ionicons name="chevron-forward" size={20} color={colors.tint} />
           </Pressable>
         </View>
 
@@ -592,7 +663,9 @@ export default function ScheduleScreen() {
               { backgroundColor: colors.surface },
               pressed && styles.weekButtonPressed,
             ]}
-            onPress={() => setViewType(prev => (prev === 'grid' ? 'list' : 'grid'))}
+            onPress={() =>
+              setViewType((prev) => (prev === 'grid' ? 'list' : 'grid'))
+            }
           >
             <Ionicons
               name={viewType === 'grid' ? 'list-outline' : 'grid-outline'}
@@ -612,12 +685,17 @@ export default function ScheduleScreen() {
       <View style={styles.legendContainer}>
         <ThemedText style={styles.legendTitle}>Діти в розкладі</ThemedText>
         <View style={styles.legendChipsRow}>
-          {childLegend.map(entry => (
+          {childLegend.map((entry) => (
             <View
               key={entry.id}
               style={[styles.legendChip, { backgroundColor: legendChipBg }]}
             >
-              <View style={[styles.legendDot, { backgroundColor: hexToRgba(entry.color, 1) }]} />
+              <View
+                style={[
+                  styles.legendDot,
+                  { backgroundColor: hexToRgba(entry.color, 1) },
+                ]}
+              />
               <ThemedText style={styles.legendText}>{entry.name}</ThemedText>
             </View>
           ))}
