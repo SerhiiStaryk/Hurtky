@@ -6,7 +6,7 @@ import { useChildren } from '@/hooks/useChildren';
 import { useAllClubs } from '@/hooks/useClubs';
 import { isClubOnVacation } from '@/lib/notifications';
 import { Ionicons } from '@expo/vector-icons';
-import { useFocusEffect } from '@react-navigation/native';
+import { useFocusEffect } from 'expo-router/react-navigation';
 import {
   addDays,
   addWeeks,
